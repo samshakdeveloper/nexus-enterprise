@@ -6,6 +6,14 @@ export interface CreateUserFormState {
   userId?: string;
 }
 
+interface ApiUserResponse {
+  id?: string;
+  email?: string;
+  error?: {
+    message?: string;
+  };
+}
+
 /**
  * Server Action: calls the Fastify API's CreateUser endpoint from the
  * server side (no client-exposed API URL beyond what's already public,
@@ -18,10 +26,14 @@ export async function createUserAction(
 ): Promise<CreateUserFormState> {
   const apiBaseUrl = process.env["NEXT_PUBLIC_API_BASE_URL"] ?? "http://localhost:3000";
 
+  const rawEmail = formData.get("email");
+  const rawFullName = formData.get("fullName");
+  const rawPassword = formData.get("password");
+
   const payload = {
-    email: String(formData.get("email") ?? ""),
-    fullName: String(formData.get("fullName") ?? ""),
-    password: String(formData.get("password") ?? ""),
+    email: typeof rawEmail === "string" ? rawEmail : "",
+    fullName: typeof rawFullName === "string" ? rawFullName : "",
+    password: typeof rawPassword === "string" ? rawPassword : "",
   };
 
   try {
@@ -31,13 +43,17 @@ export async function createUserAction(
       body: JSON.stringify(payload),
     });
 
-    const body = await response.json();
+    const body = (await response.json()) as ApiUserResponse;
 
     if (!response.ok) {
-      return { status: "error", message: body?.error?.message ?? "Something went wrong." };
+      return { status: "error", message: body.error?.message ?? "Something went wrong." };
     }
 
-    return { status: "success", userId: body.id, message: `User ${body.email} created.` };
+    return {
+      status: "success",
+      userId: body.id,
+      message: `User ${body.email ?? "unknown"} created.`,
+    };
   } catch {
     return { status: "error", message: "Could not reach the API. Is it running?" };
   }

@@ -1,38 +1,31 @@
-import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { newDb } from "pg-mem";
-import type { Kysely } from "kysely";
-import { User, Email } from "@nexus/domain";
-import { PostgresUserRepositoryAdapter } from "../src/persistence/postgres/postgres-user-repository.adapter";
-import type { Database } from "../src/persistence/postgres/postgres-schema";
+import {afterAll, beforeAll, describe, expect, it} from "vitest";
+import {newDb} from "pg-mem";
+import type {Kysely} from "kysely";
+import {Email, FullName, HashedPassword, User, UserId, VerificationCode} from "@nexus/domain";
+import type {PostgresTablesContract} from "../src";
+import {PostgresUserRepositoryAdapter} from "../src";
 
-/**
- * Integration test against pg-mem — an in-memory Postgres-compatible
- * engine. This exercises the REAL SQL (via Kysely) without requiring a
- * live Postgres container, which keeps this suite fast enough to run on
- * every commit; a separate, smaller Testcontainers-backed suite (see
- * README) runs against real Postgres in CI before merge to catch any
- * pg-mem/Postgres semantic drift.
- */
 describe("PostgresUserRepository (pg-mem integration)", () => {
-  let db: Kysely<Database>;
+  let db: Kysely<PostgresTablesContract>;
   let repo: PostgresUserRepositoryAdapter;
 
   beforeAll(async () => {
     const mem = newDb({ autoCreateForeignKeyIndices: true });
     mem.public.registerFunction({ name: "now", implementation: () => new Date() });
-    const adapter = mem.adapters.createKysely() as Kysely<Database>;
-    db = adapter;
+      db = mem.adapters.createKysely() as Kysely<PostgresTablesContract>;
 
     await db.schema
-      .createTable("users")
-      .addColumn("id", "uuid", (c) => c.primaryKey())
-      .addColumn("email", "varchar(254)", (c) => c.notNull().unique())
-      .addColumn("full_name", "varchar(120)", (c) => c.notNull())
-      .addColumn("hashed_password", "text", (c) => c.notNull())
-      .addColumn("status", "varchar(32)", (c) => c.notNull())
-      .addColumn("created_at", "timestamptz", (c) => c.notNull())
-      .addColumn("version", "integer", (c) => c.notNull().defaultTo(0))
-      .execute();
+        .createTable("users")
+        .addColumn("id", "uuid", (c) => c.primaryKey())
+        .addColumn("email", "varchar(254)", (c) => c.notNull().unique())
+        .addColumn("full_name", "varchar(120)", (c) => c.notNull())
+        .addColumn("hashed_password", "text", (c) => c.notNull())
+        .addColumn("status", "varchar(32)", (c) => c.notNull())
+        .addColumn("verification_code", "varchar(6)", (c) => c.notNull()) // <--- اضافه شد
+        .addColumn("verification_code_expires_at", "timestamp", (c) => c.notNull()) // <--- اضافه شد
+        .addColumn("created_at", "timestamp", (c) => c.notNull())
+        .addColumn("version", "integer", (c) => c.notNull().defaultTo(0))
+        .execute();
 
     repo = new PostgresUserRepositoryAdapter(db);
   });
@@ -43,13 +36,19 @@ describe("PostgresUserRepository (pg-mem integration)", () => {
 
   it("saves a user and finds it back by email, normalized", async () => {
     const user = User.register(
-      {
-        id: "018f0000-0000-7000-8000-000000000001",
-        email: "Ada@Example.com",
-        fullName: "Ada Lovelace",
-        hashedPassword: "$2b$12$abcdefghijklmnopqrstuv",
-      },
-      { idGenerator: { generate: () => "evt-1" }, clock: { now: () => new Date("2026-01-01T00:00:00Z") } },
+        {
+          id: UserId.create("018f0000-0000-7000-8000-000000000001"),
+          email: Email.create("Ada@Example.com"),
+          fullName: FullName.create("Ada Lovelace"),
+          hashedPassword: HashedPassword.fromHash("$2b$12$abcdefghijklmnopqrstuv"),
+          verificationCode: VerificationCode.create("123456"),
+          verificationCodeExpiresAt: new Date("2026-01-01T01:00:00Z"),
+          createdAt: new Date("2026-01-01T00:00:00Z"),
+        },
+        {
+          idGenerator: { generate: () => "evt-1" },
+          clock: { now: () => new Date("2026-01-01T00:00:00Z") },
+        },
     );
 
     await repo.save(user);

@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, type CSSProperties } from "react";
+
 import { createUserAction, type CreateUserFormState } from "./actions";
 
 const initialState: CreateUserFormState = { status: "idle" };

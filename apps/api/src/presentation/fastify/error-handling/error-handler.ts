@@ -45,12 +45,19 @@ export function registerErrorHandler(app: FastifyInstance, logger: LoggerPort): 
     } else if (error instanceof DomainException) {
       statusCode = 422;
       body.error = { code: error.code, message: error.message, correlationId };
-    } else if ("statusCode" in error && typeof error.statusCode === "number") {
-      statusCode = error.statusCode;
-      body.error = { code: "REQUEST_ERROR", message: error.message, correlationId };
-    }
-
-    if (statusCode >= 500) {
+    }  else if ((error as FastifyError).validation) {
+    // خطای ولیدیشن Fastify (schema/zod) که داخل FastifyError پیچیده شده
+    statusCode = 400;
+    body.error = {
+      code: "VALIDATION_ERROR",
+      message: "Request failed validation.",
+      correlationId,
+      details: (error as FastifyError).validation,
+    };
+  } else if ("statusCode" in error && typeof error.statusCode === "number") {
+    statusCode = error.statusCode;
+    body.error = { code: "REQUEST_ERROR", message: error.message, correlationId };
+  } if (statusCode >= 500) {
       logger.error("Unhandled error", error, { correlationId, url: request.url });
     } else {
       logger.warn("Request failed", { correlationId, url: request.url, statusCode, message: error.message });
