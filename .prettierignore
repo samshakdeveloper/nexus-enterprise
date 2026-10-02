@@ -1,0 +1,7 @@
+# Build & Cache Directories
+.turbo
+dist
+.next
+node_modules
+coverage
+*.tsbuildinfo

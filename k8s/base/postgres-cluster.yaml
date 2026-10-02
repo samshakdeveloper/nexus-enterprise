@@ -1,0 +1,44 @@
+# نیازمند اپراتور CloudNativePG (platform/argocd/apps/cloudnative-pg.yaml)
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: nexus-pg
+  labels:
+    app.kubernetes.io/part-of: nexus
+spec:
+  instances: 3
+  imageName: ghcr.io/cloudnative-pg/postgresql:16   # TODO: به tag دقیق (مثلاً 16.x) یا digest pin کن
+  enableSuperuserAccess: false
+  primaryUpdateStrategy: unsupervised
+  storage:
+    size: 20Gi
+  walStorage:
+    size: 5Gi
+  bootstrap:
+    initdb:
+      database: nexus_db
+      owner: nexus
+      secret:
+        name: nexus-pg-app-credentials   # basic-auth: username/password (prod: ExternalSecret)
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: 256MB
+  resources:
+    requests: {cpu: 500m, memory: 1Gi}
+    limits: {memory: 1Gi}
+  affinity:
+    enablePodAntiAffinity: true
+    podAntiAffinityType: preferred
+    topologyKey: kubernetes.io/hostname
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: nexus-pg
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/cluster: nexus-pg
+  podMetricsEndpoints:
+    - port: metrics

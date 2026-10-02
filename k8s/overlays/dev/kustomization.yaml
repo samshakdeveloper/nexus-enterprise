@@ -1,0 +1,94 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-dev
+
+resources:
+  - ../../base
+  - namespace.yaml
+  - gateway.yaml
+  - minio-dev.yaml
+  - email-deps-dev.yaml
+
+# فقط مقادیر غیرمحرمانه و مخصوص کلستر (نه .env ریشه که آدرس‌های docker-compose دارد و secret هم توش است)
+configMapGenerator:
+  - name: global-env-config
+    envs:
+      - config/app.env
+    options:
+      disableNameSuffixHash: true
+
+# فقط dev: مقادیر ساختگی. در prod از ExternalSecret می‌آید.
+secretGenerator:
+  - name: nexus-pg-app-credentials
+    type: kubernetes.io/basic-auth
+    literals: [username=nexus, password=dev-only-change-me]
+    options: {disableNameSuffixHash: true}
+  - name: nexus-s3
+    literals: [S3_ACCESS_KEY=nexus_dev, S3_SECRET_KEY=dev-only-change-me-12345]
+    options: {disableNameSuffixHash: true}
+  - name: nexus-app
+    literals: [JWT_SECRET=dev-only-change-me-jwt-secret-0123456789]
+    options: {disableNameSuffixHash: true}
+
+# 👈 تنظیم دقیق نام ایمیج‌های لوکال برای Docker Desktop
+images:
+  - {name: nexus-api,          newName: nexus-api,          newTag: latest}
+  - {name: nexus-web,          newName: nexus-web,          newTag: latest}
+  - {name: nexus-email-worker, newName: nexus-email-worker, newTag: latest}
+  - {name: nexus-event-worker, newName: nexus-event-worker, newTag: latest}
+  - {name: nexus-pdf-worker,   newName: nexus-pdf-worker,   newTag: latest}
+
+patches:
+  # ست کردن استراتژی Recreate و imagePullPolicy روی IfNotPresent
+  - target: {kind: Deployment}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: add
+        path: /spec/strategy
+        value:
+          type: Recreate
+      - op: add
+        path: /spec/template/spec/containers/0/imagePullPolicy
+        value: IfNotPresent
+
+  - target: {kind: HorizontalPodAutoscaler}
+    patch: |-
+      - op: replace
+        path: /spec/minReplicas
+        value: 1
+      - op: replace
+        path: /spec/maxReplicas
+        value: 2
+  - target: {kind: Cluster, name: nexus-pg}
+    patch: |-
+      - op: replace
+        path: /spec/instances
+        value: 1
+      - op: replace
+        path: /spec/storage/size
+        value: 5Gi
+      - op: replace
+        path: /spec/walStorage/size
+        value: 2Gi
+  - target: {kind: KafkaNodePool, name: dual-role}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+      - op: replace
+        path: /spec/storage/volumes/0/size
+        value: 10Gi
+  - target: {kind: Kafka, name: nexus-kafka}
+    patch: |-
+      - op: replace
+        path: /spec/kafka/config
+        value:
+          offsets.topic.replication.factor: 1
+          transaction.state.log.replication.factor: 1
+          transaction.state.log.min.isr: 1
+          default.replication.factor: 1
+          min.insync.replicas: 1
+          auto.create.topics.enable: true

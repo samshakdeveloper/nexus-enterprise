@@ -1,0 +1,51 @@
+# نیازمند اپراتور Strimzi (platform/argocd/apps/strimzi.yaml)
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: dual-role
+  labels:
+    strimzi.io/cluster: nexus-kafka
+spec:
+  replicas: 3
+  roles: [controller, broker]
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 50Gi
+        deleteClaim: false
+  resources:
+    requests: {cpu: 500m, memory: 2Gi}
+    limits: {memory: 2Gi}
+---
+apiVersion: kafka.strimzi.io/v1
+kind: Kafka
+metadata:
+  name: nexus-kafka
+  annotations:
+    strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
+spec:
+  kafka:
+    listeners:
+      # آدرس داخلی: nexus-kafka-kafka-bootstrap:9092
+      # TODO(امنیت): برای TLS + SCRAM باید کد سرویس‌ها هم تغییر کند؛ فعلاً با NetworkPolicy محدود شده
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+    config:
+      offsets.topic.replication.factor: 3
+      transaction.state.log.replication.factor: 3
+      transaction.state.log.min.isr: 2
+      default.replication.factor: 3
+      min.insync.replicas: 2
+      # TODO: بعد از تعریف KafkaTopicها (k8s/optional/kafka-topics.yaml) این را false کن
+      auto.create.topics.enable: true
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+  kafkaExporter:
+    topicRegex: ".*"
+    groupRegex: ".*"

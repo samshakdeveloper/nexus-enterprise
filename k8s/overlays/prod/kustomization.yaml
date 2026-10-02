@@ -1,0 +1,51 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: nexus-prod
+
+resources:
+  - ../../base
+  - namespace.yaml
+  - gateway.yaml
+  - externalsecrets.yaml
+  - pg-backup.yaml
+
+configMapGenerator:
+  - name: global-env-config
+    envs:
+      - config/app.env
+
+# در prod حتماً با digest (immutable) deploy کن؛ CI مقدار digest را جایگزین می‌کند
+images:
+  - {name: nexus-api,          newName: registry.example.com/nexus/api,          digest: "sha256:REPLACE_ME"}
+  - {name: nexus-web,          newName: registry.example.com/nexus/web,          digest: "sha256:REPLACE_ME"}
+  - {name: nexus-email-worker, newName: registry.example.com/nexus/email-worker, digest: "sha256:REPLACE_ME"}
+  - {name: nexus-event-worker, newName: registry.example.com/nexus/event-worker, digest: "sha256:REPLACE_ME"}
+  - {name: nexus-pdf-worker,   newName: registry.example.com/nexus/pdf-worker,   digest: "sha256:REPLACE_ME"}
+
+patches:
+  - target: {kind: Deployment, name: api}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target: {kind: Deployment, name: web}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  - target: {kind: Deployment, name: pdf-worker}
+    patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 3
+  # فعال‌سازی WAL archiving و backup از طریق plugin
+  - target: {kind: Cluster, name: nexus-pg}
+    patch: |-
+      - op: add
+        path: /spec/plugins
+        value:
+          - name: barman-cloud.cloudnative-pg.io
+            isWALArchiver: true
+            parameters:
+              barmanObjectName: nexus-pg-backup

@@ -1,0 +1,21 @@
+syntax = "proto3";
+package nexus.pdf.v1;
+
+option go_package = "nexus-enterprise/pdf-worker/gen/pdf_v1";
+
+// درخواست تولید PDF
+message GeneratePdfCommand {
+  string pdf_id = 1;
+  string template_id = 2;
+  string html_content = 3;
+  map<string, string> variables = 4;
+}
+
+// نتیجه تولید PDF
+message PdfGeneratedEvent {
+  string pdf_id = 1;
+  string file_url = 2;       // مثلاً لینک S3 یا Storage
+  bytes pdf_bytes = 3;       // یا بایت‌های خام PDF
+  int64 file_size_bytes = 4;
+  bool is_success = 5;
+}

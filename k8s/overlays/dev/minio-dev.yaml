@@ -1,0 +1,126 @@
+# فقط dev. نسخه‌ی community مینیو دیگر نگهداری نمی‌شود؛ در prod از S3 واقعی/Ceph استفاده کن.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio-service
+spec:
+  selector: {app.kubernetes.io/name: minio}
+  ports:
+    - {name: api, port: 9000, targetPort: api}
+    - {name: console, port: 9001, targetPort: console}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: minio
+spec:
+  serviceName: minio-service
+  replicas: 1
+  selector:
+    matchLabels: {app.kubernetes.io/name: minio}
+  template:
+    metadata:
+      labels: {app.kubernetes.io/name: minio}
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: minio
+          image: minio/minio:RELEASE.2024-01-31T20-20-15Z
+          args: [server, /data, --console-address, ":9001"]
+          ports:
+            - {name: api, containerPort: 9000}
+            - {name: console, containerPort: 9001}
+          env:
+            - name: MINIO_ROOT_USER
+              valueFrom: {secretKeyRef: {name: nexus-s3, key: S3_ACCESS_KEY}}
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom: {secretKeyRef: {name: nexus-s3, key: S3_SECRET_KEY}}
+          readinessProbe:
+            httpGet: {path: /minio/health/ready, port: api}
+          livenessProbe:
+            httpGet: {path: /minio/health/live, port: api}
+          resources:
+            requests: {cpu: 100m, memory: 256Mi}
+            limits: {memory: 512Mi}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: data, mountPath: /data}
+  volumeClaimTemplates:
+    - metadata: {name: data}
+      spec:
+        accessModes: [ReadWriteOnce]
+        resources: {requests: {storage: 5Gi}}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: minio-create-bucket
+spec:
+  backoffLimit: 10
+  template:
+    metadata:
+      labels: {nexus.io/minio-client: "true"}
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      containers:
+        - name: mc
+          image: minio/mc:latest   # dev-only
+          env:
+            - {name: MC_CONFIG_DIR, value: /tmp/.mc}
+            - name: S3_ACCESS_KEY
+              valueFrom: {secretKeyRef: {name: nexus-s3, key: S3_ACCESS_KEY}}
+            - name: S3_SECRET_KEY
+              valueFrom: {secretKeyRef: {name: nexus-s3, key: S3_SECRET_KEY}}
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              until mc alias set m http://minio-service:9000 "$S3_ACCESS_KEY" "$S3_SECRET_KEY"; do sleep 3; done
+              mc mb --ignore-existing m/nexus-pdfs
+              mc anonymous set none m/nexus-pdfs
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# در dev مینیو داخل کلستر است: اجازه‌ی egress پورت 9000 برای podهای s3
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-minio-egress-dev}
+spec:
+  podSelector: {matchLabels: {nexus.io/egress: s3}}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {matchLabels: {app.kubernetes.io/name: minio}}
+      ports:
+        - {protocol: TCP, port: 9000}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: allow-minio-ingress-dev}
+spec:
+  podSelector: {matchLabels: {app.kubernetes.io/name: minio}}
+  policyTypes: [Ingress]
+  ingress:
+    - from:
+        - podSelector: {matchLabels: {nexus.io/egress: s3}}
+        - podSelector: {matchLabels: {nexus.io/minio-client: "true"}}
+      ports: [{protocol: TCP, port: 9000}]

@@ -1,0 +1,17 @@
+# نمونه‌ی autoscale ورکرها بر اساس lag. topic و consumerGroup را با مقادیر واقعی عوض کن.
+# اگر از این استفاده می‌کنی، replicas ثابت Deployment را حذف کن تا KEDA کنترل کند.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: pdf-worker
+spec:
+  scaleTargetRef: {name: pdf-worker}
+  minReplicaCount: 2
+  maxReplicaCount: 20
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: nexus-kafka-kafka-bootstrap:9092
+        consumerGroup: pdf-worker      # TODO
+        topic: pdf-events              # TODO
+        lagThreshold: "50"

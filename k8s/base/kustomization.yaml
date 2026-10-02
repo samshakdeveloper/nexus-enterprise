@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# namespace در overlayها تعیین می‌شود (هیچ namespace ای هاردکد نشده)
+resources:
+  - api.yaml
+  - web.yaml
+  - email-worker.yaml
+  - event-worker.yaml
+  - pdf-worker.yaml
+  - postgres-cluster.yaml
+  - kafka.yaml
+  - routes.yaml
+  - network-policies.yaml
+  - observability-rules.yaml
+
+# ConfigMap با نام global-env-config (فقط مقادیر غیرمحرمانه) و Secretهای
+# nexus-pg-app-credentials / nexus-s3 / nexus-app (JWT_SECRET) در overlay ساخته می‌شوند
+# (dev: secretGenerator، prod: ExternalSecret)

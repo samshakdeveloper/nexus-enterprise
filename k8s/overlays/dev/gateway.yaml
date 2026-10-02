@@ -1,0 +1,23 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: nexus-gateway
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: dev.example.com          # TODO
+      allowedRoutes: {namespaces: {from: Same}}
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: dev.example.com          # TODO
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - {name: nexus-tls}
+      allowedRoutes: {namespaces: {from: Same}}

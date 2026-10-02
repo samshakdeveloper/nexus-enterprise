@@ -1,0 +1,23 @@
+{
+  "name": "@nexus/email-worker",
+  "version": "1.0.0",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "docker:build": "docker build -t nexus-email-worker:latest -f Dockerfile ../.."
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "ioredis": "^5.4.1",
+    "kafkajs": "^2.2.4",
+    "nodemailer": "^6.9.13"
+  },
+  "devDependencies": {
+    "@types/kafkajs": "^1.8.2",
+    "@types/nodemailer": "^6.4.14",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}

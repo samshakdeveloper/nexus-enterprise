@@ -1,0 +1,64 @@
+# نصب Prometheus Operator + Prometheus + Alertmanager + Grafana در namespace مانیتورینگ.
+# k8s/base/observability-rules.yaml (ServiceMonitor/PrometheusRule) و postgres-cluster.yaml (PodMonitor)
+# با CRDهای همین چارت discover می‌شوند.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kube-prometheus-stack
+  namespace: argocd
+spec:
+  project: default
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    chart: kube-prometheus-stack
+    targetRevision: "65.5.1"   # TODO: قبل از اعمال، آخرین نسخه‌ی پایدار را چک کن
+    helm:
+      valuesObject:
+        prometheus:
+          prometheusSpec:
+            # مهم: بدون این سه خط، Prometheus فقط ServiceMonitor/PodMonitor/Rule های ساخته‌شده
+            # توسط خود چارت را می‌بیند و آنهایی که در k8s/base تعریف شده‌اند (بدون label رلیز) نادیده گرفته می‌شوند
+            serviceMonitorSelectorNilUsesHelmValues: false
+            podMonitorSelectorNilUsesHelmValues: false
+            ruleSelectorNilUsesHelmValues: false
+            retention: 15d
+            resources:
+              requests: {cpu: 200m, memory: 512Mi}
+              limits: {memory: 1Gi}
+        alertmanager:
+          alertmanagerSpec:
+            resources:
+              requests: {cpu: 50m, memory: 64Mi}
+              limits: {memory: 128Mi}
+        grafana:
+          adminPassword: "change-me"   # TODO(prod): از ExternalSecret/Vault بگیر، نه مقدار plaintext
+          resources:
+            requests: {cpu: 50m, memory: 128Mi}
+            limits: {memory: 256Mi}
+          # جایگزین monitoring/grafana/provisioning/datasources/datasources.yaml برای محیط k8s:
+          additionalDataSources:
+            - name: Loki
+              uid: loki
+              type: loki
+              access: proxy
+              url: http://loki-gateway.monitoring.svc.cluster.local
+              jsonData:
+                derivedFields:
+                  - name: TraceID
+                    matcherRegex: '"?trace_?[iI]d"?[=:]\s*"?(\w+)'
+                    url: '$${__value.raw}'
+                    datasourceUid: tempo
+            - name: Tempo
+              uid: tempo
+              type: tempo
+              access: proxy
+              url: http://tempo.monitoring.svc.cluster.local:3200
+              jsonData:
+                tracesToLogsV2: {datasourceUid: loki}
+                serviceMap: {datasourceUid: prometheus}
+  syncPolicy:
+    automated: {prune: true, selfHeal: true}
+    syncOptions: [CreateNamespace=true]

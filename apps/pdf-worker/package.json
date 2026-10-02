@@ -1,0 +1,8 @@
+{
+  "name": "@nexus/pdf-worker",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "docker:build": "docker build -t nexus-pdf-worker:latest -f Dockerfile ../.."
+  }
+}

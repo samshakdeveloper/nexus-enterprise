@@ -1,0 +1,14 @@
+# فقط برای docker-compose محلی. در k8s اسکرپ از طریق ServiceMonitor انجام می‌شود.
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+  - job_name: fastify-app
+    metrics_path: /metrics
+    static_configs:
+      # API روی هاست اجرا می‌شود (نه داخل شبکه‌ی compose)
+      - targets: ['host.docker.internal:3000']

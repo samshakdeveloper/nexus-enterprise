@@ -1,0 +1,12 @@
+HTTP/1.1 400 Bad Request
+x-correlation-id: fb660c07-b49e-4981-adb6-6497f3de7125
+vary: Origin
+x-ratelimit-limit: 100
+x-ratelimit-remaining: 99
+x-ratelimit-reset: 60
+connection: close
+content-type: application/json; charset=utf-8
+content-length: 107
+Date: Wed, 23 Sep 2026 03:42:45 GMT
+
+{"data":null,"errors":[{"message":"Body is not valid JSON but content-type is set to 'application/json'"}]}

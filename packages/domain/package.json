@@ -1,0 +1,17 @@
+{
+  "name": "@nexus/domain",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@nexus/shared": "*"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "test": "vitest run --passWithNoTests",
+    "lint": "eslint .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint . --fix"
+  }
+}

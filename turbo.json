@@ -1,0 +1,27 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
+    },
+    "docker:build": {
+      "dependsOn": ["build"],
+      "inputs": ["Dockerfile", "src/**", "package.json", "tsconfig.json", "../../packages/*/src/**"],
+      "cache": false
+    },
+    "lint": {
+      "outputs": []
+    },
+    "lint:check": {
+      "outputs": []
+    },
+    "test": {
+      "outputs": []
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

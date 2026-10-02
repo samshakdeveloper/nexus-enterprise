@@ -1,0 +1,239 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: nexus-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: nexus
+      POSTGRES_DB: nexus_users
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: nexus-kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
+      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092,PLAINTEXT_HOST://127.0.0.1:9092'
+      KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@kafka:29093'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKAJS_NO_PARTITIONER_WARNING: 1
+      KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+
+# سرویس ساخت خودکار تاپیک‌های مورد نیاز
+  kafka-init:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: nexus-kafka-init
+    depends_on:
+      - kafka
+    entrypoint: [ '/bin/sh', '-c' ]
+    command: >
+      "
+      echo 'Waiting for Kafka to be ready...';
+      cub kafka-ready -b kafka:29092 1 30;
+      echo 'Creating kafka topics...';
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic nexus.user --partitions 1 --replication-factor 1;
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic email.notifications.reply --partitions 1 --replication-factor 1;
+      kafka-topics --bootstrap-server kafka:29092 --create --if-not-exists --topic email.notifications.dlq --partitions 1 --replication-factor 1;
+      echo 'Successfully created topics';
+      "
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  pdf-worker:
+    build:
+      context: .
+      dockerfile: apps/pdf-worker/Dockerfile
+    environment:
+      KAFKA_BROKER: "kafka:29092"
+      S3_ENDPOINT: "minio:9000"
+      S3_ACCESS_KEY: "nexus_admin"
+      S3_SECRET_KEY: "nexus_password123"
+      S3_BUCKET_NAME: "nexus-pdfs"
+    depends_on:
+      - kafka
+      - minio
+
+  minio:
+    image: minio/minio:latest
+    container_name: nexus-minio
+    ports:
+      - "9000:9000" # API Port (برای کلاینت‌ها و Presigned URLها)
+      - "9001:9001" # Web Console Port (پنل مدیریتی تحت وب)
+    environment:
+      MINIO_ROOT_USER: "nexus_admin"
+      MINIO_ROOT_PASSWORD: "nexus_password123"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # این سرویس خودکار بعد از بالا آمدن مینیو، باکت nexus-pdfs را می‌سازد
+  minio-create-buckets:
+    image: minio/mc
+    container_name: nexus-minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 nexus_admin nexus_password123;
+      /usr/bin/mc mb --ignore-existing myminio/nexus-pdfs;
+      /usr/bin/mc anonymous set private myminio/nexus-pdfs;
+      exit 0;
+      "
+
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile # یا مسیر دقیق Dockerfile مربوط به API
+    container_name: nexus-api
+    ports:
+      - "3000:3000"
+    environment:
+      # General Configuration
+      - NODE_ENV=development
+      - PORT=3000
+      - LOG_LEVEL=info
+      - PRESENTATION_DRIVER=fastify
+      - ENCRYPTION_SECRET_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
+      # Database & Redis
+      - DATABASE_URL=postgres://nexus:nexus@postgres:5432/nexus_users
+      - REDIS_URL=
+
+      # Monitoring & Observability (Docker Network Hosts)
+      - OTEL_SERVICE_NAME=nexus-api
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+      - LOKI_URL=http://monitoring_loki:3100
+      - TRACING_LEVEL=hard
+
+      # Security & Rate Limit
+      - JWT_SECRET=change-me-in-production
+      - RATE_LIMIT_MAX=100
+      - RATE_LIMIT_WINDOW_MS=60000
+
+      # Swagger & API Config
+      - SWAGGER_UI_ENABLED=true
+      - REBUILD_DOCS=true
+      - API_PUBLIC_URL=http://localhost:3000
+      - CORS_ALLOWED_ORIGINS=http://localhost:3000,https://app.mydomain.com,https://admin.mydomain.com
+
+      # Kafka Configuration
+      - KAFKA_BROKER=kafka:29092
+      - KAFKA_BROKERS=kafka:29092
+      - KAFKAJS_NO_PARTITIONER_WARNING=1
+      - KAFKA_CONSUME_TOPIC=nexus.user
+      - KAFKA_REPLY_TOPIC=email.notifications.reply
+      - KAFKA_DLQ_TOPIC=email.notifications.dlq
+
+      # MinIO / S3 Storage
+      - S3_ENDPOINT=minio:9000
+      - S3_ACCESS_KEY=nexus_admin
+      - S3_SECRET_KEY=nexus_password123
+      - S3_BUCKET_NAME=nexus-pdfs
+      - S3_USE_SSL=false
+      - S3_REGION=us-east-1
+      - MINIO_CONSOLE_PORT=9001
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+      minio:
+        condition: service_healthy
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile # یا مسیر دقیق Dockerfile مربوط به Web (Next.js)
+    container_name: nexus-web
+    ports:
+      - "3001:3000" # یا هر پورتی که برای فرانت‌ند در نظر داری
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://localhost:3000
+    depends_on:
+      - api
+
+  email-worker:
+    build:
+      context: .
+      dockerfile: apps/email-worker/Dockerfile
+    container_name: nexus-email-worker
+    environment:
+      - NODE_ENV=development
+      - KAFKA_BROKER=kafka:29092
+      - KAFKA_BROKERS=kafka:29092
+      - KAFKA_CONSUME_TOPIC=nexus.user
+      - KAFKA_REPLY_TOPIC=email.notifications.reply
+      - KAFKA_DLQ_TOPIC=email.notifications.dlq
+      - OTEL_SERVICE_NAME=nexus-email-worker
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+      - LOKI_URL=http://monitoring_loki:3100
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      kafka:
+        condition: service_started
+
+  event-worker:
+    build:
+      context: .
+      dockerfile: apps/event-worker/Dockerfile
+    container_name: nexus-event-worker
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgres://nexus:nexus@postgres:5432/nexus_users
+      - KAFKA_BROKER=kafka:29092
+      - KAFKA_BROKERS=kafka:29092
+      - OTEL_SERVICE_NAME=nexus-event-worker
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://tempo:4318
+      - LOKI_URL=http://monitoring_loki:3100
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+        
+
+volumes:
+  pgdata:
+  minio_data:

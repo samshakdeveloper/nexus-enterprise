@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: email-worker
+automountServiceAccountToken: false
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: email-worker
+  labels: &labels
+    app.kubernetes.io/name: email-worker
+    app.kubernetes.io/part-of: nexus
+    nexus.io/tier: app
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: email-worker
+  template:
+    metadata:
+      labels:
+        <<: *labels
+        nexus.io/egress: smtp
+    spec:
+      serviceAccountName: email-worker
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 60   # فرصت برای commit offsetها و اتمام کار جاری
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        seccompProfile: {type: RuntimeDefault}
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector: {matchLabels: {app.kubernetes.io/name: email-worker}}
+      containers:
+        - name: email-worker
+          image: nexus-email-worker
+          envFrom:
+            - configMapRef: {name: global-env-config}
+            - secretRef: {name: nexus-smtp, optional: true}
+          resources:
+            requests: {cpu: 50m, memory: 96Mi}
+            limits: {cpu: "500m", memory: 256Mi}
+          # worker پورت ندارد. برای liveness واقعی، endpoint سلامت/متریک به worker اضافه کن.
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: {drop: ["ALL"]}
+          volumeMounts:
+            - {name: tmp, mountPath: /tmp}
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: email-worker
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: email-worker

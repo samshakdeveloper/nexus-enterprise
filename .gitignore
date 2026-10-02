@@ -1,0 +1,98 @@
+# ==========================================
+# 1. Dependency Directories
+# ==========================================
+node_modules/
+jspm_packages/
+web_modules/
+.pnpm-store/
+.yarn/cache/
+.yarn/unplugged/
+# ==========================================
+# 2. Build & Distribution Outputs
+# ==========================================
+dist/
+build/
+out/
+.next/
+.nuxt/
+.out/
+.vuepress/dist/
+*.tsbuildinfo
+# ==========================================
+# 3. Environment & Security Secrets
+# ==========================================
+.env
+.env.*
+!.env.example
+!.env.template
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+# ==========================================
+# 4. Logs & Monitoring Data
+# ==========================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+# ==========================================
+# 5. IDEs, Editors & OS Files
+# ==========================================
+# OS Garbage
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+thumbs.db
+ehthumbs.db
+Desktop.ini
+# IDE Settings (Keep repo editor-agnostic)
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+# ==========================================
+# 6. Testing, Coverage & Report Tools
+# ==========================================
+coverage/
+.nyc_output/
+.clover/
+htmlcov/
+*.lcov
+.vitest/
+# ==========================================
+# 7. Local Infrastructure & Containers
+# ==========================================
+.docker/
+docker-compose.override.yml
+*.sqlite
+*.sqlite3
+*.db
+# ==========================================
+# 8. Temporary Files & Cache
+# ==========================================
+.cache/
+.eslintcache
+.stylelintcache
+.prettiercache
+.node_repl_history
+*.tmp
+*.bak
+# ==========================================
+# 9. etc
+# ==========================================
+
+*.txt

@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package nexus.archive.v1;
+
+// ورودی یک فایل برای قرارگیری در آرشیو zip
+message ArchiveItem {
+  string filename = 1;      // مثلاً "invoices/2026-01.pdf"
+  bytes content = 2;       // دیتای خام یا بایت‌های فایل
+}
+
+// دستور درخواست ایجاد فایل زیپ (ارسالی از API/Worker به کافکا)
+message CreateArchiveCommand {
+  string archive_id = 1;            // شناسه یکتا برای پیگیری
+  repeated ArchiveItem files = 2;   // لیستی از فایل‌هایی که باید زیپ شوند
+  int32 compression_level = 3;      // سطح فشرده‌سازی zlib (بین 0 تا 9)
+}
+
+// ایونت خروجی پس از ساخت موفق/ناموفق آرشیو زیپ (تولیدی توسط C Worker)
+message ArchiveCreatedEvent {
+  string archive_id = 1;
+  string file_url = 2;              // آدرس ذخیره‌سازی فایل زیپ نهایی
+  bytes zip_bytes = 3;              // بایت‌های خام فایل .zip (اختیاری)
+  int64 uncompressed_size_bytes = 4; // مجموع سایز فایل‌های اولیه
+  int64 compressed_size_bytes = 5;   // سایز فایل زیپ‌شده نهایی
+  bool is_success = 6;
+  string error_message = 7;
+  int64 process_time_ms = 8;         // مدت زمان پردازش در ورکر C
+}

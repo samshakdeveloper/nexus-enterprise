@@ -1,0 +1,13 @@
+# نمونه: نام و تنظیم topicهای واقعی پروژه را جایگزین کن، سپس auto.create.topics.enable را false کن.
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaTopic
+metadata:
+  name: pdf-events
+  labels:
+    strimzi.io/cluster: nexus-kafka
+spec:
+  partitions: 6
+  replicas: 3
+  config:
+    retention.ms: "604800000"
+    min.insync.replicas: "2"
