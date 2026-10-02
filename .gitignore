@@ -84,6 +84,7 @@ docker-compose.override.yml
 # ==========================================
 # 8. Temporary Files & Cache
 # ==========================================
+.turbo/
 .cache/
 .eslintcache
 .stylelintcache
@@ -94,5 +95,6 @@ docker-compose.override.yml
 # ==========================================
 # 9. etc
 # ==========================================
-
+*.ps1
 *.txt
+*.zip
