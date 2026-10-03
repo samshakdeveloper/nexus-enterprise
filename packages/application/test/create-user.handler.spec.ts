@@ -1,27 +1,32 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { User, UserId, Email } from "@nexus/domain";
 import { Result } from "@nexus/shared";
-import { CreateUserHandler } from "../src/users/commands/create-user/create-user.handler";
-import { CreateUserCommand } from "../src/users/commands/create-user/create-user.command";
-import { EmailAlreadyInUseError, PasswordPolicyError } from "../src/users/commands/create-user/create-user.errors";
-import type { UserRepositoryPort } from "../src/users/ports/user-repository.port";
-import type { PasswordHasherPort } from "../src/users/ports/password-hasher.port";
-import type { PasswordPolicyPort } from "../src/users/ports/password-policy.port";
-import type { EventPublisherPort } from "../src/users/ports/event-publisher.port";
-import type { UnitOfWorkPort } from "../src/users/ports/unit-of-work.port";
+import { CreateUserHandler } from "../src";
+import { CreateUserCommand } from "../src";
+import { EmailAlreadyInUseError, PasswordPolicyError } from "../src";
+import type { UserRepositoryPort } from "../src";
+import type { PasswordHasherPort } from "../src";
+import type { PasswordPolicyPort } from "../src";
+import type { EventPublisherPort } from "../src";
+import type { UnitOfWorkPort } from "../src";
 
 /** In-memory fake — the whole point of the ports/adapters split: zero mocking frameworks needed. */
 class InMemoryUserRepository implements UserRepositoryPort {
   public readonly users = new Map<string, User>();
+
   async findByEmail(email: Email) {
-    return [...this.users.values()].find((u) => u.email.equals(email)) ?? null;
+    // به جای [...this.users.values()] از Array.from استفاده شد
+    return Array.from(this.users.values()).find((u) => u.email.equals(email)) ?? null;
   }
+
   async existsByEmail(email: Email) {
     return (await this.findByEmail(email)) !== null;
   }
+
   async save(user: User) {
     this.users.set(user.id.value, user);
   }
+
   async findById(id: UserId) {
     return this.users.get(id.value) ?? null;
   }
@@ -74,7 +79,9 @@ describe("CreateUserHandler", () => {
     repo = new InMemoryUserRepository();
     events = new RecordingEventPublisher();
   });
-
+  const verificationCodeGeneratorPort = {
+    generate: () => "123456",
+  };
   function makeHandler(policy: PasswordPolicyPort = alwaysAllowPolicy) {
     return new CreateUserHandler({
       userRepositoryPort: repo,
@@ -83,6 +90,7 @@ describe("CreateUserHandler", () => {
       eventPublisherPort: events,
       unitOfWorkPort: passthroughUnitOfWork,
       idGeneratorPort,
+      verificationCodeGeneratorPort,
       clockPort,
       loggerPort,
     });

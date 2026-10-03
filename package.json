@@ -82,6 +82,10 @@
     "zod-to-json-schema": "^3.23.5"
   },
   "overrides": {
-    "uuid": "$uuid"
+    "uuid": "$uuid",
+    "kysely": "$kysely",
+    "pg-mem": {
+      "kysely": "$kysely"
+    }
   }
 }
