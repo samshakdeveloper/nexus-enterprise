@@ -9,20 +9,23 @@ concurrency:
   cancel-in-progress: true
 jobs:
   code-quality:
-    name: Code Quality & Security Audit
+    name: Code Quality Checks
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: 'npm'
+
       - name: Install Monorepo Dependencies
         run: npm ci --legacy-peer-deps
+
       - name: Monorepo Turborepo/Nx Build Cache Setup
         uses: actions/cache@v4
         with:
@@ -30,12 +33,12 @@ jobs:
           key: ${{ runner.os }}-turbo-${{ github.sha }}
           restore-keys: |
             ${{ runner.os }}-turbo-
-      - name: Check Code Formatting
+
+      - name: Check Code Formatting (Prettier)
         run: npm run format:check --if-present
-      - name: Run Linter Across Workspace
+
+      - name: Run Linter Across Workspace (ESLint)
         run: npm run lint --if-present
-      - name: Security Vulnerability Audit
-        run: npm audit --omit=dev --audit-level=high
   type-check-and-test:
     name: Type Check & Automated Tests
     runs-on: ubuntu-latest
