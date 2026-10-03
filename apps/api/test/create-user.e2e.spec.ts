@@ -66,28 +66,28 @@ describe("POST /api/v1/users (e2e)", () => {
 
     container.register({
       createUserHandler: asFunction(
-          ({
-             userRepositoryPort,
-             passwordHasherPort,
-             passwordPolicyPort,
-             eventPublisherPort,
-             unitOfWorkPort,
-             idGeneratorPort,
-             clockPort,
-             loggerPort,
-             verificationCodeGeneratorPort,
-           }: CompositionRootContract) =>
-              new CreateUserHandler({
-                userRepositoryPort,
-                passwordHasherPort,
-                passwordPolicyPort,
-                eventPublisherPort,
-                unitOfWorkPort,
-                idGeneratorPort,
-                clockPort,
-                loggerPort,
-                verificationCodeGeneratorPort,
-              }),
+        ({
+          userRepositoryPort,
+          passwordHasherPort,
+          passwordPolicyPort,
+          eventPublisherPort,
+          unitOfWorkPort,
+          idGeneratorPort,
+          clockPort,
+          loggerPort,
+          verificationCodeGeneratorPort,
+        }: CompositionRootContract) =>
+          new CreateUserHandler({
+            userRepositoryPort,
+            passwordHasherPort,
+            passwordPolicyPort,
+            eventPublisherPort,
+            unitOfWorkPort,
+            idGeneratorPort,
+            clockPort,
+            loggerPort,
+            verificationCodeGeneratorPort,
+          }),
       ).singleton(),
     });
 

@@ -33,16 +33,16 @@ function makeDeps() {
 describe("User aggregate", () => {
   it("registers a new user in PENDING_VERIFICATION status and raises UserCreatedEvent", () => {
     const user = User.register(
-        {
-          id: UserId.create("11111111-1111-1111-1111-111111111111"),
-          email: Email.create("Ada@Example.com"),
-          fullName: FullName.create("Ada Lovelace"),
-          hashedPassword: HashedPassword.fromHash(VALID_HASH),
-          verificationCode: VerificationCode.create("123456"),
-          verificationCodeExpiresAt: new Date("2026-01-01T01:00:00.000Z"),
-          createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        },
-        makeDeps(),
+      {
+        id: UserId.create("11111111-1111-1111-1111-111111111111"),
+        email: Email.create("Ada@Example.com"),
+        fullName: FullName.create("Ada Lovelace"),
+        hashedPassword: HashedPassword.fromHash(VALID_HASH),
+        verificationCode: VerificationCode.create("123456"),
+        verificationCodeExpiresAt: new Date("2026-01-01T01:00:00.000Z"),
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      makeDeps(),
     );
 
     expect(user.status).toBe("PENDING_VERIFICATION");
@@ -62,16 +62,16 @@ describe("User aggregate", () => {
 
   it("clears domain events after they have been drained", () => {
     const user = User.register(
-        {
-          id: UserId.create("11111111-1111-1111-1111-111111111111"),
-          email: Email.create("a@b.com"),
-          fullName: FullName.create("Ada Lovelace"),
-          hashedPassword: HashedPassword.fromHash(VALID_HASH),
-          verificationCode: VerificationCode.create("123456"),
-          verificationCodeExpiresAt: new Date("2026-01-01T01:00:00.000Z"),
-          createdAt: new Date("2026-01-01T00:00:00.000Z"),
-        },
-        makeDeps(),
+      {
+        id: UserId.create("11111111-1111-1111-1111-111111111111"),
+        email: Email.create("a@b.com"),
+        fullName: FullName.create("Ada Lovelace"),
+        hashedPassword: HashedPassword.fromHash(VALID_HASH),
+        verificationCode: VerificationCode.create("123456"),
+        verificationCodeExpiresAt: new Date("2026-01-01T01:00:00.000Z"),
+        createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      },
+      makeDeps(),
     );
     user.clearEvents();
     expect(user.domainEvents).toHaveLength(0);
