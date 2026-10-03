@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { BcryptPasswordHasherAdapter } from "../src/security/bcrypt-password-hasher.adapter";
+import { BcryptPasswordHasherAdapter } from "../src";
 
 describe("BcryptPasswordHasher", () => {
   it("hashes a password and can verify it against the original", async () => {
