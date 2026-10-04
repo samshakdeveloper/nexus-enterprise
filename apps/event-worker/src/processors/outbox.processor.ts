@@ -1,13 +1,11 @@
 // apps/event-worker/src/processors/outbox.processor.ts
 import { OutboxRepositoryPort } from "@nexus/application";
-import { DomainEventNames } from "@nexus/domain";
-
-import { KafkaPublisherAdapter } from "../infrastructure/kafka/kafka-publisher.adapter.js";
+import { DomainEventTopics, DomainEventEnvelope, MessageBrokerPublisherPort } from "@nexus/domain";
 
 export class OutboxProcessor {
   constructor(
     private readonly outboxRepo: OutboxRepositoryPort,
-    private readonly kafkaPublisher: KafkaPublisherAdapter,
+    private readonly messageBrokerPublisher: MessageBrokerPublisherPort,
   ) {}
 
   // اجرا با CronJob یا Interval
@@ -16,19 +14,20 @@ export class OutboxProcessor {
 
     for (const message of pendingMessages) {
       try {
-        const topic = DomainEventNames.USER_CREATED;
+        const topic = DomainEventTopics.USER_EVENTS;
 
-        // ارسال به کافکا توسط آداپتور اختصاصی Worker
-        await this.kafkaPublisher.publish(
-          topic,
-          message.aggregateId,
-          {
-            eventId: message.id,
-            type: message.type,
-            data: message.payload,
-          },
-          message.traceId,
-        );
+        // ۲. ساخت پیام طبق Contract استاندارد دامین
+        const eventEnvelope: DomainEventEnvelope = {
+          eventId: message.id,
+          type: message.type,
+          data: message.payload,
+          // اگر traceId نداشت، یک UUID جدید برای شروع Trace ایجاد می‌کنیم
+          traceId: message.traceId ?? crypto.randomUUID(),
+          // تضمین تبدیل تاریخ به ایزو استرینگ
+          occurredAt: message.createdAt ? new Date(message.createdAt).toISOString() : new Date().toISOString(),
+        };
+
+        await this.messageBrokerPublisher.publish(topic, message.aggregateId, eventEnvelope, message.traceId);
 
         // علامت‌گذاری به عنوان پردازش شده
         await this.outboxRepo.markAsProcessed(message.id);

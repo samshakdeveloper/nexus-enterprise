@@ -1,5 +1,5 @@
 // src/email-worker.ts
-import { DomainEventNames } from "@nexus/domain";
+import { DomainEventEnvelope, DomainEventNames, DomainEventTopics } from "@nexus/domain";
 import { Redis } from "ioredis";
 import { Kafka, EachMessagePayload } from "kafkajs";
 
@@ -33,7 +33,7 @@ async function handleMessage({ topic, partition, message }: EachMessagePayload) 
   // ۱. Idempotency Check با Redis (مستقل و سریع)
   const isNew = await redis.set(`processed_event:${eventId}`, "1", "EX", 86400, "NX");
   if (!isNew) {
-    console.log(`[EmailWorker] Event ${eventId} already processed. Skipping.`);
+    console.info(`[EmailWorker] Event ${eventId} already processed. Skipping.`);
     return;
   }
 
@@ -52,16 +52,32 @@ async function handleMessage({ topic, partition, message }: EachMessagePayload) 
         console.warn(`[EmailWorker] Unhandled event type: ${type}`);
         return;
     }
-
-    // ۳. ارسال ایونت موفقیت به کافکا (EMAIL_SENT)
-    await publisher.publish(TOPIC_REPLY, {
+    const emailSentEnvelope: DomainEventEnvelope = {
+      eventId: crypto.randomUUID(),
       type: DomainEventNames.EMAIL_SENT,
-      payload: {
+      data: {
         originalEventId: eventId,
         recipient: data.email,
         sentAt: new Date().toISOString(),
       },
-    });
+      traceId: traceId ?? crypto.randomUUID(),
+      occurredAt: new Date().toISOString(),
+    };
+    // ۳. ارسال ایونت موفقیت به کافکا (EMAIL_SENT)
+    // await publisher.publish(TOPIC_REPLY, {
+    //   type: DomainEventNames.EMAIL_SENT,
+    //   payload: {
+    //     originalEventId: eventId,
+    //     recipient: data.email,
+    //     sentAt: new Date().toISOString(),
+    //   },
+    // });
+    await publisher.publish(
+      DomainEventTopics.EMAIL_EVENTS, // یا تاپیک مربوطه
+      eventId, // Key (مثلاً همان eventId اولیه یا userId)
+      emailSentEnvelope,
+      emailSentEnvelope.traceId,
+    );
 
     // ۴. Commit آفست پس از موفقیت کامل
     await consumer.commitOffsets([{ topic, partition, offset: (BigInt(message.offset) + 1n).toString() }]);
@@ -87,15 +103,19 @@ async function handleMessage({ topic, partition, message }: EachMessagePayload) 
 export async function startWorker() {
   await publisher.connect();
   await consumer.connect();
-
-  await consumer.subscribe({ topic: env.KAFKA_CONSUME_TOPIC, fromBeginning: false });
+  // const SUBSCRIBED_TOPICS = [
+  //   DomainEventTopics.USER_EVENTS,     // شامل user.created, user.verified, password.reset
+  //   DomainEventTopics.ORDER_EVENTS,    // شامل order.placed, order.shipped
+  //   DomainEventTopics.PAYMENT_EVENTS,  // شامل payment.failed, receipt.generated
+  // ];
+  await consumer.subscribe({ topic: DomainEventTopics.USER_EVENTS, fromBeginning: false });
 
   await consumer.run({
     autoCommit: false, // کنترل کاملاً دست ساز
     eachMessage: handleMessage,
   });
 
-  console.log(`🚀 Enterprise Email Worker listening to topic: ${env.KAFKA_CONSUME_TOPIC}`);
+  console.info(`🚀 Enterprise Email Worker listening to topic: ${DomainEventTopics.USER_EVENTS}`);
 }
 
 export async function stopWorker() {

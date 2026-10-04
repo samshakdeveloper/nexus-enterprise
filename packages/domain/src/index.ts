@@ -13,3 +13,6 @@ export * from "./user/events/user-created.event.js";
 export * from "./user/exceptions/user.exceptions.js";
 export * from "./user/value-objects/verification-code.vo.js";
 export * from "./events/domain-event-names.js";
+export * from "./events/domain-event-topics.js";
+export * from "./events/domain-event-envelope.contract.js";
+export * from "./ports/messaging/message-broker-publisher.port.js";

@@ -1,5 +1,6 @@
 // src/adapters/kafka-publisher.adapter.ts
 import { Kafka, Producer } from "kafkajs";
+
 import { IEventPublisher } from "../ports/event-publisher.port";
 
 export class KafkaPublisherAdapter implements IEventPublisher {

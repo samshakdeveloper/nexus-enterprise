@@ -1,5 +1,6 @@
 // src/adapters/nodemailer.adapter.ts
 import nodemailer, { Transporter } from "nodemailer";
+
 import { Env } from "../config/env";
 import { IEmailProvider, SendEmailPayload } from "../ports/email-provider.port";
 

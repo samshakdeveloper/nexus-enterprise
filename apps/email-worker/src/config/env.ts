@@ -1,6 +1,7 @@
 // src/config/env.ts
-import dotenv from "dotenv";
 import path from "node:path";
+
+import dotenv from "dotenv";
 import { z } from "zod";
 
 dotenv.config({ path: path.resolve(process.cwd(), ".env") });

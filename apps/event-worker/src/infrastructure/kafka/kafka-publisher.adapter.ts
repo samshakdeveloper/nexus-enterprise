@@ -1,6 +1,7 @@
+import { MessageBrokerPublisherPort, DomainEventEnvelope, DomainEventTopic } from "@nexus/domain";
 import { Kafka, Producer, logLevel } from "kafkajs";
 
-export class KafkaPublisherAdapter {
+export class KafkaPublisherAdapter implements MessageBrokerPublisherPort {
   private kafka: Kafka;
   private producer: Producer;
 
@@ -26,15 +27,20 @@ export class KafkaPublisherAdapter {
     await this.producer.connect();
   }
 
-  async publish(topic: string, key: string, payload: any, traceId?: string): Promise<void> {
+  async publish<T = unknown>(
+    topic: DomainEventTopic,
+    key: string,
+    envelope: DomainEventEnvelope<T>,
+    traceId?: string,
+  ): Promise<void> {
     await this.producer.send({
       topic,
       messages: [
         {
           key,
-          value: JSON.stringify(payload),
+          value: JSON.stringify(envelope),
           headers: {
-            traceId: traceId || "",
+            traceId: traceId || envelope.traceId || "",
           },
         },
       ],

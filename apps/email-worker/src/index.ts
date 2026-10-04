@@ -6,7 +6,7 @@ let shuttingDown = false;
 async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
-  console.log(`[EmailWorker] ${signal} received, shutting down...`);
+  console.info(`[EmailWorker] ${signal} received, shutting down...`);
   try {
     await stopWorker();
     process.exit(0);
