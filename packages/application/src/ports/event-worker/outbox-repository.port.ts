@@ -6,7 +6,7 @@ export interface OutboxMessage {
   type: string;
   payload: Record<string, unknown>;
   traceId?: string;
-  createdAt: Date;
+  occurred_at: Date;
 }
 
 export interface OutboxRepositoryPort {

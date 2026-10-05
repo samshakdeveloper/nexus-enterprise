@@ -1,9 +1,10 @@
 // src/adapters/nodemailer.adapter.ts
 import nodemailer, { Transporter } from "nodemailer";
-import { Env } from "../config/env";
-import { IEmailProvider, SendEmailPayload } from "../ports/email-provider.port";
 
-export class NodemailerAdapter implements IEmailProvider {
+import { Env } from "../config/env.js";
+import { IEmailProviderPort, SendEmailPayload } from "../ports/email-provider.port.js";
+
+export class NodemailerAdapter implements IEmailProviderPort {
   private transporter: Transporter;
 
   constructor(env: Env) {

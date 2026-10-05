@@ -18,15 +18,6 @@ import { configureRequestPipeline } from "../src/request-pipeline.js";
 import { loadEnv } from "../src/config/env";
 import { UserController } from "../src/presentation/fastify/controllers/user.controller";
 
-/**
- * End-to-end test: real Fastify instance (via `.inject`, no open socket),
- * real DI container, but the two I/O-bound ports (repository, event
- * publisher) are swapped for in-memory fakes so this suite needs no
- * running Postgres. This is the outermost layer of the test pyramid,
- * proving controller -> command bus -> handler -> HTTP response all wire
- * together correctly; `packages/*␣/test` cover the layers underneath in
- * isolation.
- */
 class FakeUserRepository implements UserRepositoryPort {
   public readonly byEmail = new Map<string, User>();
   async findByEmail(email: Email) {
@@ -42,18 +33,24 @@ class FakeUserRepository implements UserRepositoryPort {
     return null;
   }
 }
+
 const fakeHasher: PasswordHasherPort = { hash: async (p) => `hashed:${p}______________`, verify: async () => true };
 const fakePublisher: EventPublisherPort = { publish: async () => {} };
 const passthroughUow: UnitOfWorkPort = { withTransaction: async (work) => work(undefined) };
+const fakeVerificationCodeGenerator = { generate: () => "123456" };
 
 describe("POST /api/v1/users (e2e)", () => {
   let app: FastifyInstance;
-  let container: AwilixContainer<CompositionRootContract>;
+  let container: AwilixContainer<CompositionRootContract> | undefined;
   let fakeRepo: FakeUserRepository;
 
   beforeAll(async () => {
-    env.DATABASE_URL ??= "postgres://fake:fake@localhost:5432/fake";
-    env.JWT_SECRET ??= "test-secret";
+    // 1. متغیرهای محیطی را قبل از loadEnv تنظیم می‌کنیم تا اسکیمای Zod پاس شود
+    process.env.DATABASE_URL ??= "postgres://fake:fake@localhost:5432/fake";
+    process.env.JWT_SECRET ??= "test-secret-must-be-at-least-32-chars-long!!";
+    process.env.ENCRYPTION_SECRET_KEY ??= "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+    process.env.NODE_ENV ??= "test";
+
     const env = loadEnv();
     container = initializeCompositionRoot(env);
 
@@ -64,8 +61,9 @@ describe("POST /api/v1/users (e2e)", () => {
       eventPublisherPort: asValue(fakePublisher),
       unitOfWorkPort: asValue(passthroughUow),
       passwordPolicyPort: asValue(new DefaultPasswordPolicyService()),
+      verificationCodeGeneratorPort: asValue(fakeVerificationCodeGenerator),
     });
-    // Re-wire the handler + bus against the swapped-in fakes.
+
     container.register({
       createUserHandler: asFunction(
         ({
@@ -77,6 +75,7 @@ describe("POST /api/v1/users (e2e)", () => {
           idGeneratorPort,
           clockPort,
           loggerPort,
+          verificationCodeGeneratorPort,
         }: CompositionRootContract) =>
           new CreateUserHandler({
             userRepositoryPort,
@@ -87,24 +86,31 @@ describe("POST /api/v1/users (e2e)", () => {
             idGeneratorPort,
             clockPort,
             loggerPort,
+            verificationCodeGeneratorPort,
           }),
       ).singleton(),
     });
+
     const bus = new InMemoryCommandBus();
     bus.register("CreateUserCommand", container.cradle.createUserHandler);
-    container.register({
+
+    (container as unknown as AwilixContainer<Record<string, unknown>>).register({
       commandBus: asValue(bus),
       userController: asFunction(({ commandBus: b }: CompositionRootContract) => new UserController(b)).singleton(),
     });
 
     const fastifyAdapter = new FastifyRequestPipelineAdapter();
-    app = await configureRequestPipeline(container, fastifyAdapter);
+    await configureRequestPipeline(container, fastifyAdapter);
+
+    // نمونه‌ی واقعی Fastify را مستقیم از getter صریح آداپتر می‌گیریم (بدون حدس زدن نام پراپرتی).
+    // اگر getter وجود نداشته باشد، TypeScript و تست همین‌جا خطا می‌دهند، نه ۵ خطای گیج‌کننده بعدتر.
+    app = fastifyAdapter.instance;
     await app.ready();
   });
 
   afterAll(async () => {
-    await app.close();
-    await container.dispose();
+    await app?.close();
+    await container?.dispose();
   });
 
   it("returns 201 with the created user on valid input", async () => {

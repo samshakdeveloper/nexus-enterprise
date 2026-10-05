@@ -15,7 +15,7 @@
     "dev": "turbo run dev",
     "dev:api": "turbo run dev --filter=@nexus/api",
     "dev:api:fast": "npm run build && node ./apps/api/dist/main.js",
-    "dev:worker:email:fast": "npm run build && node ./apps/email-worker/dist/email-worker.js",
+    "dev:worker:email:fast": "npm run build && node ./apps/email-worker/dist/index.js",
     "dev:worker:event:fast": "npm run build && node ./apps/event-worker/dist/index.js",
     "dev:api:trace": "npm run build && node --import ./apps/api/dist/telemetry/tracing.js ./apps/api/dist/main.js",
     "dev:api:watch": "tsx watch ./apps/api/src/main.ts",
@@ -82,6 +82,10 @@
     "zod-to-json-schema": "^3.23.5"
   },
   "overrides": {
-    "uuid": "$uuid"
+    "uuid": "$uuid",
+    "kysely": "$kysely",
+    "pg-mem": {
+      "kysely": "$kysely"
+    }
   }
 }

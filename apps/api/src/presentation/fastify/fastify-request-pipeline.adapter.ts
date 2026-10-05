@@ -24,6 +24,13 @@ import { userRoutes } from "./routes/user.routes.js";
 export class FastifyRequestPipelineAdapter implements RequestPipelineServerPort {
   private fastifyApp!: FastifyInstance;
 
+  get instance(): FastifyInstance {
+    if (!this.fastifyApp) {
+      throw new Error("FastifyRequestPipelineAdapter: setup() must be called before accessing instance");
+    }
+    return this.fastifyApp;
+  }
+
   async setup(rootContainer: AwilixContainer<CompositionRootContract>): Promise<void> {
     const env = rootContainer.cradle.env;
     log("fastifyApp  run");

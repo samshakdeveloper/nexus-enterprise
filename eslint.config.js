@@ -20,7 +20,9 @@ export default tseslint.config(
       '**/.turbo/**',
       '**/*.config.ts',  // نادیده گرفتن تمام فایل‌های کانفیگ مثل tsup.config.ts
       '**/*.config.js',
-      '**/test/**'
+      '**/test/**',
+      '**/*.config.js',
+      '**/*.config.mjs'
     ],
   },
 

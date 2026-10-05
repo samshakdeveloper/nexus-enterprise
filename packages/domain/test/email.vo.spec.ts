@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { Email } from "../src/user/value-objects/email.vo.js";
-import { InvalidEmailException } from "../src/user/exceptions/user.exceptions";
+import { Email } from "../src";
+import { InvalidEmailException } from "../src";
 
 describe("Email value object", () => {
   it("normalizes casing and trims whitespace", () => {

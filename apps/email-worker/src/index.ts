@@ -1,12 +1,12 @@
 // نقطه‌ی ورود کانتینر. email-worker.ts فقط startWorker را export می‌کرد و هیچ‌جا صدا زده نمی‌شد.
-import { startWorker, stopWorker } from "./email-worker";
+import { startWorker, stopWorker } from "./email-worker.js";
 
 let shuttingDown = false;
 
 async function shutdown(signal: string): Promise<void> {
   if (shuttingDown) return;
   shuttingDown = true;
-  console.log(`[EmailWorker] ${signal} received, shutting down...`);
+  console.info(`[EmailWorker] ${signal} received, shutting down...`);
   try {
     await stopWorker();
     process.exit(0);
