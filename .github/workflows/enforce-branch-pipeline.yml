@@ -1,0 +1,28 @@
+name: Enforce Branch Merge Pipeline
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+jobs:
+  validate-merge-source:
+    name: Validate Merge Source
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify Staging Merge Source
+        if: github.base_ref == 'staging' && github.head_ref != 'development'
+        run: |
+          echo "❌ ERROR: PR to 'staging' can ONLY originate from 'development' branch."
+          echo "Current source branch: '${{ github.head_ref }}'"
+          exit 1
+
+      - name: Verify Main Merge Source
+        if: github.base_ref == 'main' && github.head_ref != 'staging'
+        run: |
+          echo "❌ ERROR: PR to 'main' can ONLY originate from 'staging' branch."
+          echo "Current source branch: '${{ github.head_ref }}'"
+          exit 1
+
+      - name: Success
+        run: |
+          echo "✅ Merge path valid: '${{ github.head_ref }}' -> '${{ github.base_ref }}'"
