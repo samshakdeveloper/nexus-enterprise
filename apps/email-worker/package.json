@@ -1,14 +1,23 @@
 {
   "name": "@nexus/email-worker",
   "version": "1.0.0",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
     "start": "node dist/index.js",
+    "test": "vitest run --dir test  --passWithNoTests",
+    "lint": "eslint .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint . --fix",
     "docker:build": "docker build -t nexus-email-worker:latest -f Dockerfile ../.."
   },
   "dependencies": {
+    "@nexus/application": "*",
+    "@nexus/domain": "*",
+    "@nexus/infrastructure": "*",
     "dotenv": "^16.6.1",
     "ioredis": "^5.4.1",
     "kafkajs": "^2.2.4",

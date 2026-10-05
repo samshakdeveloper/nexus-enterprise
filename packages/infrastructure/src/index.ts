@@ -13,3 +13,4 @@ export * from "./bus/in-memory-command-bus.js";
 export * from "./adapters/aes-encryption.adapter.js";
 export * from "./adapters/aws-secrets-manager.adapter.js";
 export * from "./security/crypto-verification-code-generator.adapter.js";
+export * from "./kafka/kafka-publisher.adapter.js";
