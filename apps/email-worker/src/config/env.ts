@@ -16,8 +16,8 @@ const EnvSchema = z.object({
   KAFKA_DLQ_TOPIC: z.string().default("email.notifications.dlq"),
 
   // 🔹 افزودن تنظیمات SMTP
-  SMTP_HOST: z.string().default("localhost"),
-  SMTP_PORT: z.coerce.number().default(1025), // coerce برای تبدیل رشته به عدد
+  SMTP_HOST: z.string().default("smtp.gmail.com"),
+  SMTP_PORT: z.coerce.number().default(465),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
 });

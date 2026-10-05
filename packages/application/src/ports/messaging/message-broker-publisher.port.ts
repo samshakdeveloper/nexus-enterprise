@@ -1,5 +1,4 @@
-import { DomainEventEnvelope } from "../../events/domain-event-envelope.contract.js";
-import { DomainEventTopic } from "../../events/domain-event-topics.js";
+import { DomainEventEnvelope, DomainEventTopic } from "@nexus/domain";
 
 export interface MessageBrokerPublisherPort {
   publish<T = unknown>(

@@ -6,6 +6,6 @@ export interface SendEmailPayload {
   html: string;
 }
 
-export interface IEmailProvider {
+export interface IEmailProviderPort {
   send(payload: SendEmailPayload): Promise<void>;
 }

@@ -1,4 +1,5 @@
-import { MessageBrokerPublisherPort, DomainEventEnvelope, DomainEventTopic } from "@nexus/domain";
+import { MessageBrokerPublisherPort } from "@nexus/application";
+import { DomainEventEnvelope, DomainEventTopic } from "@nexus/domain";
 import { Kafka, Producer, logLevel } from "kafkajs";
 
 export class KafkaPublisherAdapter implements MessageBrokerPublisherPort {

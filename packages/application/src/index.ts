@@ -22,3 +22,4 @@ export * from "./ports/event-worker/outbox-repository.port.js";
 export * from "./ports/encryption.port.js";
 export * from "./ports/secret-manager.port.js";
 export * from "./users/ports/verification-code-generator.port.js";
+export * from "./ports/messaging/message-broker-publisher.port.js";

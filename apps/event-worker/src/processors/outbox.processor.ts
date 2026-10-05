@@ -1,6 +1,6 @@
 // apps/event-worker/src/processors/outbox.processor.ts
-import { OutboxRepositoryPort } from "@nexus/application";
-import { DomainEventTopics, DomainEventEnvelope, MessageBrokerPublisherPort } from "@nexus/domain";
+import { OutboxRepositoryPort, MessageBrokerPublisherPort } from "@nexus/application";
+import { DomainEventTopics, DomainEventEnvelope } from "@nexus/domain";
 
 export class OutboxProcessor {
   constructor(
@@ -15,6 +15,7 @@ export class OutboxProcessor {
     for (const message of pendingMessages) {
       try {
         const topic = DomainEventTopics.USER_EVENTS;
+        console.error("DEBUG createdAt:", typeof message.occurred_at, message.occurred_at);
 
         // ۲. ساخت پیام طبق Contract استاندارد دامین
         const eventEnvelope: DomainEventEnvelope = {
@@ -23,10 +24,7 @@ export class OutboxProcessor {
           data: message.payload,
           // اگر traceId نداشت، یک UUID جدید برای شروع Trace ایجاد می‌کنیم
           traceId: message.traceId ?? crypto.randomUUID(),
-          // تضمین تبدیل تاریخ به ایزو استرینگ
-          occurredAt: message.createdAt ? new Date(message.createdAt).toISOString() : new Date().toISOString(),
         };
-
         await this.messageBrokerPublisher.publish(topic, message.aggregateId, eventEnvelope, message.traceId);
 
         // علامت‌گذاری به عنوان پردازش شده

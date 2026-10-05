@@ -1,12 +1,13 @@
 // apps/event-worker/src/index.ts
+import { KafkaPublisherAdapter } from "@nexus/infrastructure";
+
 import { loadEnv } from "./config/env.js";
 import { OutboxRepositoryAdapter } from "./infrastructure/database/outbox-repository.adapter.js";
-import { KafkaPublisherAdapter } from "./infrastructure/kafka/kafka-publisher.adapter.js";
 import { OutboxProcessor } from "./processors/outbox.processor.js";
 
 async function bootstrap() {
   const env = loadEnv();
-  console.log(`🌍 Environment loaded successfully [${env.NODE_ENV}]`);
+  console.info(`🌍 Environment loaded successfully [${env.NODE_ENV}]`);
 
   // ۱. ساخت آداپتورها (Infrastructure Layer)
   const kafkaPublisher = new KafkaPublisherAdapter(env.KAFKA_BROKER);
@@ -17,21 +18,27 @@ async function bootstrap() {
   // ۲. تزریق dependencyها به پردازشگر (Processor / Application Layer)
   const outboxProcessor = new OutboxProcessor(outboxRepo, kafkaPublisher);
 
-  console.log("🚀 Event Worker is up and running...");
+  console.info("🚀 Event Worker is up and running...");
 
   // ۳. اجرا در حلقه زمانی (Polling Loop)
-  const intervalId = setInterval(async () => {
-    await outboxProcessor.processPendingEvents();
+  const intervalId = setInterval(() => {
+    outboxProcessor.processPendingEvents().catch((error: unknown) => {
+      console.error("[OutboxProcessor] Polling error:", error);
+    });
   }, 3000); // هر ۳ ثانیه یک‌بار چک می‌کند
 
   // Graceful Shutdown
-  const shutdown = async () => {
-    console.log("Shutting down Event Worker...");
+  const shutdown = () => {
+    console.info("Shutting down Event Worker...");
     clearInterval(intervalId);
-    await kafkaPublisher.disconnect();
-    process.exit(0);
+    kafkaPublisher
+      .disconnect()
+      .then(() => process.exit(0))
+      .catch((error: unknown) => {
+        console.error("Error during disconnect:", error);
+        process.exit(1);
+      });
   };
-
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
 }

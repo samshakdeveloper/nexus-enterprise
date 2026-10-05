@@ -1,11 +1,17 @@
 // src/email-worker.ts
-import { DomainEventEnvelope, DomainEventNames, DomainEventTopics } from "@nexus/domain";
-import { Redis } from "ioredis";
-import { Kafka, EachMessagePayload } from "kafkajs";
+import { randomUUID } from "node:crypto";
 
-import { KafkaPublisherAdapter } from "./adapters/kafka-publisher.adapter";
-import { NodemailerAdapter } from "./adapters/nodemailer.adapter";
-import { loadEnv } from "./config/env";
+import { DomainEventNames, DomainEventTopics } from "@nexus/domain";
+import type { DomainEventEnvelope, UserCreatedPayload } from "@nexus/domain";
+import { KafkaPublisherAdapter } from "@nexus/infrastructure";
+import { Redis } from "ioredis";
+import { Kafka } from "kafkajs";
+import type { EachMessagePayload } from "kafkajs";
+
+import { NodemailerAdapter } from "./adapters/nodemailer.adapter.js";
+import { loadEnv } from "./config/env.js";
+
+const IDEMPOTENCY_TTL_SECONDS = 86_400;
 
 const env = loadEnv();
 
@@ -19,106 +25,155 @@ const kafka = new Kafka({
 });
 
 const consumer = kafka.consumer({ groupId: "nexus-email-service-group" });
-const publisher = new KafkaPublisherAdapter(kafka);
+const publisher = new KafkaPublisherAdapter(env.KAFKA_BROKER);
 
-const TOPIC_REPLY = env.KAFKA_REPLY_TOPIC;
-const TOPIC_DLQ = env.KAFKA_DLQ_TOPIC;
+// ---------- Helpers ----------
 
-async function handleMessage({ topic, partition, message }: EachMessagePayload) {
-  if (!message.value) return;
+const escapeHtml = (value: string): string =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
-  const rawEvent = JSON.parse(message.value.toString());
-  const { eventId, type, data } = rawEvent;
+const getErrorMessage = (error: unknown): string => (error instanceof Error ? error.message : String(error));
 
-  // ۱. Idempotency Check با Redis (مستقل و سریع)
-  const isNew = await redis.set(`processed_event:${eventId}`, "1", "EX", 86400, "NX");
-  if (!isNew) {
-    console.info(`[EmailWorker] Event ${eventId} already processed. Skipping.`);
+function parseEnvelope(raw: Buffer): DomainEventEnvelope<unknown> | null {
+  try {
+    return JSON.parse(raw.toString()) as DomainEventEnvelope<unknown>;
+  } catch {
+    return null;
+  }
+}
+
+async function commitOffset({ topic, partition, message }: EachMessagePayload): Promise<void> {
+  await consumer.commitOffsets([{ topic, partition, offset: (BigInt(message.offset) + 1n).toString() }]);
+}
+
+// ---------- Handler ----------
+
+async function handleMessage(payload: EachMessagePayload): Promise<void> {
+  const { message } = payload;
+  console.info(`[EmailWorker] Received message at offset ${message.offset}`);
+  // پیام خالی یا خراب (poison message) نباید Consumer را قفل کند
+  if (!message.value) {
+    await commitOffset(payload);
     return;
   }
 
-  try {
-    // ۲. پردازش بر اساس نوع ایونت
-    switch (type) {
-      case DomainEventNames.USER_CREATED:
-        await mailProvider.send({
-          to: data.email,
-          subject: "خوش آمدید!",
-          html: `<h1>سلام ${data.firstName}</h1>`,
-        });
-        break;
+  const envelope = parseEnvelope(message.value);
+  if (!envelope) {
+    console.error(`[EmailWorker] Invalid JSON at offset ${message.offset}. Skipping.`);
+    await commitOffset(payload);
+    return;
+  }
 
-      default:
-        console.warn(`[EmailWorker] Unhandled event type: ${type}`);
-        return;
-    }
+  const { eventId, type, traceId } = envelope;
+
+  // اول نوع ایونت چک می‌شود تا برای ایونت‌های نامربوط کلید Redis ساخته نشود
+  if (type !== DomainEventNames.USER_CREATED) {
+    console.warn(`[EmailWorker] Unhandled event type: ${type}`);
+    await commitOffset(payload);
+    return;
+  }
+
+  // Idempotency Check با Redis
+  const idempotencyKey = `processed_event:${eventId}`;
+  const isNew = await redis.set(idempotencyKey, "1", "EX", IDEMPOTENCY_TTL_SECONDS, "NX");
+  if (!isNew) {
+    console.info(`[EmailWorker] Event ${eventId} already processed. Skipping.`);
+    await commitOffset(payload);
+    return;
+  }
+
+  const { data } = envelope as DomainEventEnvelope<UserCreatedPayload>;
+  const getString = (data: UserCreatedPayload, key: string): string | null => {
+    const value = data[key];
+    return typeof value === "string" ? value : null;
+  };
+
+  const resolvedTraceId = traceId ?? randomUUID();
+  const verificationCode = getString(data, "verificationCode");
+  // const expiresAt = getString(data, "verificationCodeExpiresAt");
+  const fullName = data.fullName || " dear ";
+
+  try {
+    await mailProvider.send({
+      to: data.email,
+      subject: "welcome",
+      html: `<h1>سلام ${escapeHtml(fullName)}</h1>${
+        verificationCode
+          ? `<p>verification code : <b>${escapeHtml(verificationCode)}</b></p>
+            `
+          : ""
+      }`,
+    });
+    console.info(`[EmailWorker] Email sent to ${data.email} (event ${eventId})`);
+
+    // ایمیل ارسال شده؛ شکست در انتشار EMAIL_SENT نباید باعث ارسال دوباره ایمیل شود
     const emailSentEnvelope: DomainEventEnvelope = {
-      eventId: crypto.randomUUID(),
+      eventId: randomUUID(),
       type: DomainEventNames.EMAIL_SENT,
       data: {
         originalEventId: eventId,
         recipient: data.email,
         sentAt: new Date().toISOString(),
       },
-      traceId: traceId ?? crypto.randomUUID(),
-      occurredAt: new Date().toISOString(),
+      traceId: resolvedTraceId,
     };
-    // ۳. ارسال ایونت موفقیت به کافکا (EMAIL_SENT)
-    // await publisher.publish(TOPIC_REPLY, {
-    //   type: DomainEventNames.EMAIL_SENT,
-    //   payload: {
-    //     originalEventId: eventId,
-    //     recipient: data.email,
-    //     sentAt: new Date().toISOString(),
-    //   },
-    // });
-    await publisher.publish(
-      DomainEventTopics.EMAIL_EVENTS, // یا تاپیک مربوطه
-      eventId, // Key (مثلاً همان eventId اولیه یا userId)
-      emailSentEnvelope,
-      emailSentEnvelope.traceId,
-    );
 
-    // ۴. Commit آفست پس از موفقیت کامل
-    await consumer.commitOffsets([{ topic, partition, offset: (BigInt(message.offset) + 1n).toString() }]);
-  } catch (error: any) {
-    console.error(`[EmailWorker] Failed to process event ${eventId}:`, error.message);
+    try {
+      await publisher.publish(DomainEventTopics.EMAIL_EVENTS, eventId, emailSentEnvelope, resolvedTraceId);
+    } catch (error: unknown) {
+      console.error(`[EmailWorker] Email sent but EMAIL_SENT publish failed for ${eventId}:`, getErrorMessage(error));
+    }
+  } catch (error: unknown) {
+    const reason = getErrorMessage(error);
+    console.error(`[EmailWorker] Failed to process event ${eventId}:`, reason);
 
-    // ۵. ارسال ایونت شکست به Dead Letter Queue (DLQ)
-    await publisher.publish(TOPIC_DLQ, {
+    // کلید حذف می‌شود تا در صورت ارسال مجدد همین ایونت، دوباره تلاش شود
+    await redis.del(idempotencyKey);
+
+    const emailFailedEnvelope: DomainEventEnvelope = {
+      eventId: randomUUID(),
       type: DomainEventNames.EMAIL_FAILED,
-      payload: {
+      data: {
         originalEventId: eventId,
-        recipient: data?.email,
-        error: error.message,
+        recipient: data.email,
+        error: reason,
         failedAt: new Date().toISOString(),
       },
-    });
+      traceId: resolvedTraceId,
+    };
 
-    // در صورت ارسال به DLQ باز هم Offset را کامیت می‌کنیم تا Queue قفل نشود
-    await consumer.commitOffsets([{ topic, partition, offset: (BigInt(message.offset) + 1n).toString() }]);
+    // اگر این publish شکست بخورد، خطا بالا می‌رود و کافکا پیام را دوباره می‌فرستد
+    await publisher.publish(DomainEventTopics.EMAIL_EVENTS, eventId, emailFailedEnvelope, resolvedTraceId);
+    await commitOffset(payload);
+    return;
   }
+
+  // Commit آفست پس از پردازش کامل
+  await commitOffset(payload);
 }
 
-export async function startWorker() {
+// ---------- Lifecycle ----------
+
+export async function startWorker(): Promise<void> {
   await publisher.connect();
   await consumer.connect();
-  // const SUBSCRIBED_TOPICS = [
-  //   DomainEventTopics.USER_EVENTS,     // شامل user.created, user.verified, password.reset
-  //   DomainEventTopics.ORDER_EVENTS,    // شامل order.placed, order.shipped
-  //   DomainEventTopics.PAYMENT_EVENTS,  // شامل payment.failed, receipt.generated
-  // ];
+
   await consumer.subscribe({ topic: DomainEventTopics.USER_EVENTS, fromBeginning: false });
 
   await consumer.run({
-    autoCommit: false, // کنترل کاملاً دست ساز
+    autoCommit: false, // کامیت دستی
     eachMessage: handleMessage,
   });
 
   console.info(`🚀 Enterprise Email Worker listening to topic: ${DomainEventTopics.USER_EVENTS}`);
 }
 
-export async function stopWorker() {
+export async function stopWorker(): Promise<void> {
   await consumer.disconnect();
   await publisher.disconnect();
   await redis.quit();
