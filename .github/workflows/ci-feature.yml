@@ -1,4 +1,4 @@
-name: Lint (Feature Branches)
+name: CI - Feature Branches
 
 on:
   push:
