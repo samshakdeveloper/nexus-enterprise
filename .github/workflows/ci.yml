@@ -28,6 +28,12 @@ jobs:
           node-version: 22
           cache: "npm"
 
+      - name: Setup Go Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: apps/pdf-worker/go.sum
+
       - name: Install Monorepo Dependencies
         run: npm ci --legacy-peer-deps
 
@@ -41,6 +47,14 @@ jobs:
 
       - name: Check Code Formatting (Prettier)
         run: npm run format:check --if-present
+
+      - name: Check Go Code Formatting (gofmt)
+        run: |
+          if [ -n "$(gofmt -l apps/pdf-worker)" ]; then
+            echo "The following Go files are not formatted correctly:"
+            gofmt -l apps/pdf-worker
+            exit 1
+          fi
 
       - name: Run Linter Across Workspace (ESLint)
         run: npm run lint --if-present
@@ -67,6 +81,12 @@ jobs:
           node-version: 22
           cache: "npm"
 
+      - name: Setup Go Environment
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache-dependency-path: apps/pdf-worker/go.sum
+
       - name: Install Dependencies
         run: npm ci
 
@@ -78,8 +98,11 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Run Unit & Integration Tests with Coverage
+      - name: Run TypeScript Unit & Integration Tests
         run: npm run test:coverage --if-present
+
+      - name: Run Go Unit & Integration Tests
+        run: npm run test:go --if-present
 
   build-verification:
     name: Build Verification
