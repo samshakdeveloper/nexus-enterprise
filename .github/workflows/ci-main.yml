@@ -2,7 +2,7 @@ name: Enterprise CI Pipeline
 
 on:
   push:
-    branches: ["**"]
+    branches: [main, staging, development]
   pull_request:
     branches: [main, staging, development]
     types: [opened, synchronize, reopened, ready_for_review]
