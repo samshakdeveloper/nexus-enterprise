@@ -16,7 +16,7 @@ spec:
   replicas: 2
   strategy:
     type: RollingUpdate
-    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
   selector:
     matchLabels:
       app.kubernetes.io/name: pdf-worker
@@ -28,37 +28,37 @@ spec:
     spec:
       serviceAccountName: pdf-worker
       automountServiceAccountToken: false
-      terminationGracePeriodSeconds: 60   # فرصت برای commit offsetها و اتمام کار جاری
+      terminationGracePeriodSeconds: 60 # فرصت برای commit offsetها و اتمام کار جاری
       securityContext:
         runAsNonRoot: true
         runAsUser: 65532
         runAsGroup: 65532
-        seccompProfile: {type: RuntimeDefault}
+        seccompProfile: { type: RuntimeDefault }
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: ScheduleAnyway
-          labelSelector: {matchLabels: {app.kubernetes.io/name: pdf-worker}}
+          labelSelector: { matchLabels: { app.kubernetes.io/name: pdf-worker } }
       containers:
         - name: pdf-worker
           image: nexus-pdf-worker
           envFrom:
-            - configMapRef: {name: global-env-config}
+            - configMapRef: { name: global-env-config }
           env:
             - name: S3_ACCESS_KEY
-              valueFrom: {secretKeyRef: {name: nexus-s3, key: S3_ACCESS_KEY}}
+              valueFrom: { secretKeyRef: { name: nexus-s3, key: S3_ACCESS_KEY } }
             - name: S3_SECRET_KEY
-              valueFrom: {secretKeyRef: {name: nexus-s3, key: S3_SECRET_KEY}}
+              valueFrom: { secretKeyRef: { name: nexus-s3, key: S3_SECRET_KEY } }
           resources:
-            requests: {cpu: 100m, memory: 128Mi}
-            limits: {cpu: "1", memory: 512Mi}
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: "1", memory: 512Mi }
           # worker پورت ندارد. برای liveness واقعی، endpoint سلامت/متریک به worker اضافه کن.
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            capabilities: {drop: ["ALL"]}
+            capabilities: { drop: ["ALL"] }
           volumeMounts:
-            - {name: tmp, mountPath: /tmp}
+            - { name: tmp, mountPath: /tmp }
       volumes:
         - name: tmp
           emptyDir: {}

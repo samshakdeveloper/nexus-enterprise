@@ -16,7 +16,7 @@ spec:
   replicas: 2
   strategy:
     type: RollingUpdate
-    rollingUpdate: {maxUnavailable: 0, maxSurge: 1}
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
   selector:
     matchLabels:
       app.kubernetes.io/name: web
@@ -34,49 +34,49 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
-        seccompProfile: {type: RuntimeDefault}
+        seccompProfile: { type: RuntimeDefault }
       topologySpreadConstraints:
         - maxSkew: 1
           topologyKey: topology.kubernetes.io/zone
           whenUnsatisfiable: ScheduleAnyway
-          labelSelector: {matchLabels: {app.kubernetes.io/name: web}}
+          labelSelector: { matchLabels: { app.kubernetes.io/name: web } }
         - maxSkew: 1
           topologyKey: kubernetes.io/hostname
           whenUnsatisfiable: ScheduleAnyway
-          labelSelector: {matchLabels: {app.kubernetes.io/name: web}}
+          labelSelector: { matchLabels: { app.kubernetes.io/name: web } }
       containers:
         - name: web
           image: nexus-web
           ports:
-            - {name: http, containerPort: 3000}
+            - { name: http, containerPort: 3000 }
           # web فقط همین‌ها را لازم دارد؛ config/secret سراسری (JWT، Kafka، ...) نباید در pod وب باشد
           env:
-            - {name: PORT, value: "3000"}
-            - {name: HOSTNAME, value: "0.0.0.0"}   # در k8s مقدار پیش‌فرض HOSTNAME اسم pod است و Next روی آن bind می‌کند
-            - {name: NEXT_PUBLIC_API_BASE_URL, value: "http://api-service:3000"}   # فراخوانی server-side از داخل کلستر
+            - { name: PORT, value: "3000" }
+            - { name: HOSTNAME, value: "0.0.0.0" } # در k8s مقدار پیش‌فرض HOSTNAME اسم pod است و Next روی آن bind می‌کند
+            - { name: NEXT_PUBLIC_API_BASE_URL, value: "http://api-service:3000" } # فراخوانی server-side از داخل کلستر
           resources:
-            requests: {cpu: 100m, memory: 192Mi}
-            limits: {cpu: "1", memory: 512Mi}
+            requests: { cpu: 100m, memory: 192Mi }
+            limits: { cpu: "1", memory: 512Mi }
           startupProbe:
-            tcpSocket: {port: http}
+            tcpSocket: { port: http }
             periodSeconds: 2
             failureThreshold: 30
           readinessProbe:
-            httpGet: {path: /, port: http}
+            httpGet: { path: /, port: http }
             periodSeconds: 5
           livenessProbe:
-            tcpSocket: {port: http}
+            tcpSocket: { port: http }
             periodSeconds: 10
           lifecycle:
             preStop:
-              exec: {command: ["sleep", "5"]}
+              exec: { command: ["sleep", "5"] }
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
-            capabilities: {drop: ["ALL"]}
+            capabilities: { drop: ["ALL"] }
           volumeMounts:
-            - {name: tmp, mountPath: /tmp}
-            - {name: next-cache, mountPath: /app/apps/web/.next/cache}
+            - { name: tmp, mountPath: /tmp }
+            - { name: next-cache, mountPath: /app/apps/web/.next/cache }
       volumes:
         - name: tmp
           emptyDir: {}
@@ -95,7 +95,7 @@ spec:
   selector:
     app.kubernetes.io/name: web
   ports:
-    - {name: http, port: 3000, targetPort: http}
+    - { name: http, port: 3000, targetPort: http }
 ---
 apiVersion: policy/v1
 kind: PodDisruptionBudget
@@ -112,11 +112,11 @@ kind: HorizontalPodAutoscaler
 metadata:
   name: web
 spec:
-  scaleTargetRef: {apiVersion: apps/v1, kind: Deployment, name: web}
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: web }
   minReplicas: 2
   maxReplicas: 8
   metrics:
     - type: Resource
       resource:
         name: cpu
-        target: {type: Utilization, averageUtilization: 70}
+        target: { type: Utilization, averageUtilization: 70 }

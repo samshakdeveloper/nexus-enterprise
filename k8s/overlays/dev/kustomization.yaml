@@ -23,25 +23,25 @@ secretGenerator:
   - name: nexus-pg-app-credentials
     type: kubernetes.io/basic-auth
     literals: [username=nexus, password=dev-only-change-me]
-    options: {disableNameSuffixHash: true}
+    options: { disableNameSuffixHash: true }
   - name: nexus-s3
     literals: [S3_ACCESS_KEY=nexus_dev, S3_SECRET_KEY=dev-only-change-me-12345]
-    options: {disableNameSuffixHash: true}
+    options: { disableNameSuffixHash: true }
   - name: nexus-app
     literals: [JWT_SECRET=dev-only-change-me-jwt-secret-0123456789]
-    options: {disableNameSuffixHash: true}
+    options: { disableNameSuffixHash: true }
 
 # 👈 تنظیم دقیق نام ایمیج‌های لوکال برای Docker Desktop
 images:
-  - {name: nexus-api,          newName: nexus-api,          newTag: latest}
-  - {name: nexus-web,          newName: nexus-web,          newTag: latest}
-  - {name: nexus-email-worker, newName: nexus-email-worker, newTag: latest}
-  - {name: nexus-event-worker, newName: nexus-event-worker, newTag: latest}
-  - {name: nexus-pdf-worker,   newName: nexus-pdf-worker,   newTag: latest}
+  - { name: nexus-api, newName: nexus-api, newTag: latest }
+  - { name: nexus-web, newName: nexus-web, newTag: latest }
+  - { name: nexus-email-worker, newName: nexus-email-worker, newTag: latest }
+  - { name: nexus-event-worker, newName: nexus-event-worker, newTag: latest }
+  - { name: nexus-pdf-worker, newName: nexus-pdf-worker, newTag: latest }
 
 patches:
   # ست کردن استراتژی Recreate و imagePullPolicy روی IfNotPresent
-  - target: {kind: Deployment}
+  - target: { kind: Deployment }
     patch: |-
       - op: replace
         path: /spec/replicas
@@ -54,7 +54,7 @@ patches:
         path: /spec/template/spec/containers/0/imagePullPolicy
         value: IfNotPresent
 
-  - target: {kind: HorizontalPodAutoscaler}
+  - target: { kind: HorizontalPodAutoscaler }
     patch: |-
       - op: replace
         path: /spec/minReplicas
@@ -62,7 +62,7 @@ patches:
       - op: replace
         path: /spec/maxReplicas
         value: 2
-  - target: {kind: Cluster, name: nexus-pg}
+  - target: { kind: Cluster, name: nexus-pg }
     patch: |-
       - op: replace
         path: /spec/instances
@@ -73,7 +73,7 @@ patches:
       - op: replace
         path: /spec/walStorage/size
         value: 2Gi
-  - target: {kind: KafkaNodePool, name: dual-role}
+  - target: { kind: KafkaNodePool, name: dual-role }
     patch: |-
       - op: replace
         path: /spec/replicas
@@ -81,7 +81,7 @@ patches:
       - op: replace
         path: /spec/storage/volumes/0/size
         value: 10Gi
-  - target: {kind: Kafka, name: nexus-kafka}
+  - target: { kind: Kafka, name: nexus-kafka }
     patch: |-
       - op: replace
         path: /spec/kafka/config

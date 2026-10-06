@@ -5,13 +5,13 @@ metadata:
   name: api
 spec:
   parentRefs:
-    - {name: nexus-gateway, sectionName: https}
+    - { name: nexus-gateway, sectionName: https }
   rules:
     - matches:
-        - path: {type: PathPrefix, value: /api}
+        - path: { type: PathPrefix, value: /api }
       # بدون URLRewrite: مسیرهای API از خود سرویس با پیشوند /api/v1 تعریف شده‌اند
       backendRefs:
-        - {name: api-service, port: 3000}
+        - { name: api-service, port: 3000 }
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -19,12 +19,12 @@ metadata:
   name: web
 spec:
   parentRefs:
-    - {name: nexus-gateway, sectionName: https}
+    - { name: nexus-gateway, sectionName: https }
   rules:
     - matches:
-        - path: {type: PathPrefix, value: /}
+        - path: { type: PathPrefix, value: / }
       backendRefs:
-        - {name: web-service, port: 3000}
+        - { name: web-service, port: 3000 }
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
@@ -32,8 +32,8 @@ metadata:
   name: http-to-https
 spec:
   parentRefs:
-    - {name: nexus-gateway, sectionName: http}
+    - { name: nexus-gateway, sectionName: http }
   rules:
     - filters:
         - type: RequestRedirect
-          requestRedirect: {scheme: https, statusCode: 301}
+          requestRedirect: { scheme: https, statusCode: 301 }
