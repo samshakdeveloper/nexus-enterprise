@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { VerificationCode } from "../src";
 
 describe("VerificationCode Value Object", () => {
-test/NEX-109-domain-value-objects-unit-tests
   it("should create a valid VerificationCode instance", () => {
     const rawCode = "123456";
     const verificationCode = VerificationCode.create(rawCode);
@@ -20,20 +19,18 @@ test/NEX-109-domain-value-objects-unit-tests
   });
 });
 
-    it("should create a valid VerificationCode instance", () => {
-        const rawCode = "123456";
-        const verificationCode = VerificationCode.create(rawCode);
+it("should create a valid VerificationCode instance", () => {
+  const rawCode = "123456";
+  const verificationCode = VerificationCode.create(rawCode);
 
-        expect(verificationCode).toBeInstanceOf(VerificationCode);
-        expect(verificationCode.value).toBe(rawCode);
-    });
-
-    it("should throw an error when created with an empty string", () => {
-        expect(() => VerificationCode.create("")).toThrow("Verification code cannot be empty");
-    });
-
-    it("should throw an error when created with only whitespace characters", () => {
-        expect(() => VerificationCode.create("   ")).toThrow("Verification code cannot be empty");
-    });
+  expect(verificationCode).toBeInstanceOf(VerificationCode);
+  expect(verificationCode.value).toBe(rawCode);
 });
-development
+
+it("should throw an error when created with an empty string", () => {
+  expect(() => VerificationCode.create("")).toThrow("Verification code cannot be empty");
+});
+
+it("should throw an error when created with only whitespace characters", () => {
+  expect(() => VerificationCode.create("   ")).toThrow("Verification code cannot be empty");
+});
