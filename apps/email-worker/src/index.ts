@@ -1,4 +1,3 @@
-// نقطه‌ی ورود کانتینر. email-worker.ts فقط startWorker را export می‌کرد و هیچ‌جا صدا زده نمی‌شد.
 import { startWorker, stopWorker } from "./email-worker.js";
 
 let shuttingDown = false;

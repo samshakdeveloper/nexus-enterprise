@@ -1,168 +1,168 @@
 # ---- پیش‌فرض: تمام podهای اپلیکیشن ingress/egress بسته ----
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: default-deny-app}
+metadata: { name: default-deny-app }
 spec:
-  podSelector: {matchLabels: {nexus.io/tier: app}}
+  podSelector: { matchLabels: { nexus.io/tier: app } }
   policyTypes: [Ingress, Egress]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-dns}
+metadata: { name: allow-dns }
 spec:
-  podSelector: {matchLabels: {nexus.io/tier: app}}
+  podSelector: { matchLabels: { nexus.io/tier: app } }
   policyTypes: [Egress]
   egress:
     - to:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: kube-system}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: kube-system } }
       ports:
-        - {protocol: UDP, port: 53}
-        - {protocol: TCP, port: 53}
+        - { protocol: UDP, port: 53 }
+        - { protocol: TCP, port: 53 }
 ---
 # ورودی از Gateway (Envoy Gateway پیش‌فرض در envoy-gateway-system اجرا می‌شود)
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-gateway-ingress}
+metadata: { name: allow-gateway-ingress }
 spec:
-  podSelector: {matchLabels: {nexus.io/expose: http}}
+  podSelector: { matchLabels: { nexus.io/expose: http } }
   policyTypes: [Ingress]
   ingress:
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: envoy-gateway-system}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system } }
       ports:
-        - {protocol: TCP, port: 3000}
+        - { protocol: TCP, port: 3000 }
 ---
 # اسکرپ Prometheus از namespace monitoring
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-metrics-scrape}
+metadata: { name: allow-metrics-scrape }
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: api}}
+  podSelector: { matchLabels: { app.kubernetes.io/name: api } }
   policyTypes: [Ingress]
   ingress:
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
       ports:
-        - {protocol: TCP, port: 3000}
+        - { protocol: TCP, port: 3000 }
 ---
 # web (SSR) → api
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-web-to-api}
+metadata: { name: allow-web-to-api }
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: api}}
+  podSelector: { matchLabels: { app.kubernetes.io/name: api } }
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: web}}
+        - podSelector: { matchLabels: { app.kubernetes.io/name: web } }
       ports:
-        - {protocol: TCP, port: 3000}
+        - { protocol: TCP, port: 3000 }
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-web-egress-api}
+metadata: { name: allow-web-egress-api }
 spec:
-  podSelector: {matchLabels: {app.kubernetes.io/name: web}}
+  podSelector: { matchLabels: { app.kubernetes.io/name: web } }
   policyTypes: [Egress]
   egress:
     - to:
-        - podSelector: {matchLabels: {app.kubernetes.io/name: api}}
+        - podSelector: { matchLabels: { app.kubernetes.io/name: api } }
       ports:
-        - {protocol: TCP, port: 3000}
+        - { protocol: TCP, port: 3000 }
 ---
 # اپ‌ها → Postgres و Kafka
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-app-egress-data}
+metadata: { name: allow-app-egress-data }
 spec:
-  podSelector: {matchLabels: {nexus.io/tier: app}}
+  podSelector: { matchLabels: { nexus.io/tier: app } }
   policyTypes: [Egress]
   egress:
     - to:
-        - podSelector: {matchLabels: {cnpg.io/cluster: nexus-pg}}
+        - podSelector: { matchLabels: { cnpg.io/cluster: nexus-pg } }
       ports:
-        - {protocol: TCP, port: 5432}
+        - { protocol: TCP, port: 5432 }
     - to:
-        - podSelector: {matchLabels: {strimzi.io/cluster: nexus-kafka}}
+        - podSelector: { matchLabels: { strimzi.io/cluster: nexus-kafka } }
       ports:
-        - {protocol: TCP, port: 9092}
+        - { protocol: TCP, port: 9092 }
 ---
 # ارسال trace (OTLP) و log (Loki push) به namespace monitoring
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-otlp-egress}
+metadata: { name: allow-otlp-egress }
 spec:
-  podSelector: {matchLabels: {nexus.io/tier: app}}
+  podSelector: { matchLabels: { nexus.io/tier: app } }
   policyTypes: [Egress]
   egress:
     - to:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
       ports:
-        - {protocol: TCP, port: 4317}
-        - {protocol: TCP, port: 4318}
-        - {protocol: TCP, port: 3100}
+        - { protocol: TCP, port: 4317 }
+        - { protocol: TCP, port: 4318 }
+        - { protocol: TCP, port: 3100 }
 ---
 # S3 خارجی (پورت 443). برای S3 داخل کلستر (dev) در overlay policy جدا داریم
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-s3-egress}
+metadata: { name: allow-s3-egress }
 spec:
-  podSelector: {matchLabels: {nexus.io/egress: s3}}
+  podSelector: { matchLabels: { nexus.io/egress: s3 } }
   policyTypes: [Egress]
   egress:
     - to:
-        - ipBlock: {cidr: 0.0.0.0/0}
+        - ipBlock: { cidr: 0.0.0.0/0 }
       ports:
-        - {protocol: TCP, port: 443}
+        - { protocol: TCP, port: 443 }
 ---
 # email-worker: SMTP / API ارائه‌دهنده‌ی ایمیل
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: allow-smtp-egress}
+metadata: { name: allow-smtp-egress }
 spec:
-  podSelector: {matchLabels: {nexus.io/egress: smtp}}
+  podSelector: { matchLabels: { nexus.io/egress: smtp } }
   policyTypes: [Egress]
   egress:
     - to:
-        - ipBlock: {cidr: 0.0.0.0/0}
+        - ipBlock: { cidr: 0.0.0.0/0 }
       ports:
-        - {protocol: TCP, port: 443}
-        - {protocol: TCP, port: 587}
-        - {protocol: TCP, port: 465}
-        - {protocol: TCP, port: 25}
+        - { protocol: TCP, port: 443 }
+        - { protocol: TCP, port: 587 }
+        - { protocol: TCP, port: 465 }
+        - { protocol: TCP, port: 25 }
 ---
 # ---- ورودی به دیتاستورها فقط از اپ‌ها/اپراتور/مانیتورینگ ----
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: postgres-ingress}
+metadata: { name: postgres-ingress }
 spec:
-  podSelector: {matchLabels: {cnpg.io/cluster: nexus-pg}}
+  podSelector: { matchLabels: { cnpg.io/cluster: nexus-pg } }
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {nexus.io/tier: app}}
-      ports: [{protocol: TCP, port: 5432}]
+        - podSelector: { matchLabels: { nexus.io/tier: app } }
+      ports: [{ protocol: TCP, port: 5432 }]
     - from:
-        - podSelector: {matchLabels: {cnpg.io/cluster: nexus-pg}}
+        - podSelector: { matchLabels: { cnpg.io/cluster: nexus-pg } }
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: cnpg-system}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: cnpg-system } }
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
-      ports: [{protocol: TCP, port: 9187}]
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }
+      ports: [{ protocol: TCP, port: 9187 }]
 ---
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
-metadata: {name: kafka-ingress}
+metadata: { name: kafka-ingress }
 spec:
-  podSelector: {matchLabels: {strimzi.io/cluster: nexus-kafka}}
+  podSelector: { matchLabels: { strimzi.io/cluster: nexus-kafka } }
   policyTypes: [Ingress]
   ingress:
     - from:
-        - podSelector: {matchLabels: {nexus.io/tier: app}}
-      ports: [{protocol: TCP, port: 9092}]
+        - podSelector: { matchLabels: { nexus.io/tier: app } }
+      ports: [{ protocol: TCP, port: 9092 }]
     - from:
-        - podSelector: {matchLabels: {strimzi.io/cluster: nexus-kafka}}
+        - podSelector: { matchLabels: { strimzi.io/cluster: nexus-kafka } }
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: strimzi-system}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: strimzi-system } }
     - from:
-        - namespaceSelector: {matchLabels: {kubernetes.io/metadata.name: monitoring}}
+        - namespaceSelector: { matchLabels: { kubernetes.io/metadata.name: monitoring } }

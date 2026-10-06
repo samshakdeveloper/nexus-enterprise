@@ -1,8 +1,8 @@
 // apps/event-worker/src/index.ts
 import { KafkaPublisherAdapter } from "@nexus/infrastructure";
 
+import { OutboxRepositoryAdapter } from "./adapters/outbox-repository.adapter.js";
 import { loadEnv } from "./config/env.js";
-import { OutboxRepositoryAdapter } from "./infrastructure/database/outbox-repository.adapter.js";
 import { OutboxProcessor } from "./processors/outbox.processor.js";
 
 async function bootstrap() {

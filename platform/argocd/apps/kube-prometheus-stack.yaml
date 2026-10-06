@@ -14,7 +14,7 @@ spec:
   source:
     repoURL: https://prometheus-community.github.io/helm-charts
     chart: kube-prometheus-stack
-    targetRevision: "65.5.1"   # TODO: قبل از اعمال، آخرین نسخه‌ی پایدار را چک کن
+    targetRevision: "65.5.1" # TODO: قبل از اعمال، آخرین نسخه‌ی پایدار را چک کن
     helm:
       valuesObject:
         prometheus:
@@ -26,18 +26,18 @@ spec:
             ruleSelectorNilUsesHelmValues: false
             retention: 15d
             resources:
-              requests: {cpu: 200m, memory: 512Mi}
-              limits: {memory: 1Gi}
+              requests: { cpu: 200m, memory: 512Mi }
+              limits: { memory: 1Gi }
         alertmanager:
           alertmanagerSpec:
             resources:
-              requests: {cpu: 50m, memory: 64Mi}
-              limits: {memory: 128Mi}
+              requests: { cpu: 50m, memory: 64Mi }
+              limits: { memory: 128Mi }
         grafana:
-          adminPassword: "change-me"   # TODO(prod): از ExternalSecret/Vault بگیر، نه مقدار plaintext
+          adminPassword: "change-me" # TODO(prod): از ExternalSecret/Vault بگیر، نه مقدار plaintext
           resources:
-            requests: {cpu: 50m, memory: 128Mi}
-            limits: {memory: 256Mi}
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { memory: 256Mi }
           # جایگزین monitoring/grafana/provisioning/datasources/datasources.yaml برای محیط k8s:
           additionalDataSources:
             - name: Loki
@@ -49,7 +49,7 @@ spec:
                 derivedFields:
                   - name: TraceID
                     matcherRegex: '"?trace_?[iI]d"?[=:]\s*"?(\w+)'
-                    url: '$${__value.raw}'
+                    url: "$${__value.raw}"
                     datasourceUid: tempo
             - name: Tempo
               uid: tempo
@@ -57,8 +57,8 @@ spec:
               access: proxy
               url: http://tempo.monitoring.svc.cluster.local:3200
               jsonData:
-                tracesToLogsV2: {datasourceUid: loki}
-                serviceMap: {datasourceUid: prometheus}
+                tracesToLogsV2: { datasourceUid: loki }
+                serviceMap: { datasourceUid: prometheus }
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
+    automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
