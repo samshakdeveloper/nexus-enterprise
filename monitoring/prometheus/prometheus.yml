@@ -6,9 +6,9 @@ global:
 scrape_configs:
   - job_name: prometheus
     static_configs:
-      - targets: ['localhost:9090']
+      - targets: ["localhost:9090"]
   - job_name: fastify-app
     metrics_path: /metrics
     static_configs:
       # API روی هاست اجرا می‌شود (نه داخل شبکه‌ی compose)
-      - targets: ['host.docker.internal:3000']
+      - targets: ["host.docker.internal:3000"]

@@ -7,7 +7,7 @@ metadata:
     app.kubernetes.io/part-of: nexus
 spec:
   instances: 3
-  imageName: ghcr.io/cloudnative-pg/postgresql:16   # TODO: به tag دقیق (مثلاً 16.x) یا digest pin کن
+  imageName: ghcr.io/cloudnative-pg/postgresql:16 # TODO: به tag دقیق (مثلاً 16.x) یا digest pin کن
   enableSuperuserAccess: false
   primaryUpdateStrategy: unsupervised
   storage:
@@ -19,14 +19,14 @@ spec:
       database: nexus_db
       owner: nexus
       secret:
-        name: nexus-pg-app-credentials   # basic-auth: username/password (prod: ExternalSecret)
+        name: nexus-pg-app-credentials # basic-auth: username/password (prod: ExternalSecret)
   postgresql:
     parameters:
       max_connections: "200"
       shared_buffers: 256MB
   resources:
-    requests: {cpu: 500m, memory: 1Gi}
-    limits: {memory: 1Gi}
+    requests: { cpu: 500m, memory: 1Gi }
+    limits: { memory: 1Gi }
   affinity:
     enablePodAntiAffinity: true
     podAntiAffinityType: preferred

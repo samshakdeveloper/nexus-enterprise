@@ -5,13 +5,13 @@ kind: ScaledObject
 metadata:
   name: pdf-worker
 spec:
-  scaleTargetRef: {name: pdf-worker}
+  scaleTargetRef: { name: pdf-worker }
   minReplicaCount: 2
   maxReplicaCount: 20
   triggers:
     - type: kafka
       metadata:
         bootstrapServers: nexus-kafka-kafka-bootstrap:9092
-        consumerGroup: pdf-worker      # TODO
-        topic: pdf-events              # TODO
+        consumerGroup: pdf-worker # TODO
+        topic: pdf-events # TODO
         lagThreshold: "50"

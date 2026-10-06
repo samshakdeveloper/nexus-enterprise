@@ -27,5 +27,5 @@ metadata:
 spec:
   limits:
     - type: Container
-      defaultRequest: {cpu: 50m, memory: 64Mi}
-      default: {memory: 256Mi}
+      defaultRequest: { cpu: 50m, memory: 64Mi }
+      default: { memory: 256Mi }
