@@ -18,7 +18,7 @@ module.exports = {
       ],
     ],
     "scope-enum": [2, "always", [
-        "root", "api", "web", "domain", "application",
+        "root", "ci",  "api", "web", "domain", "application",
       "infrastructure", "shared","pdf-worker",
       "email-worker",
       "event-worker"]],

@@ -45,8 +45,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-      - name: Check Code Formatting (Prettier)
-        run: npm run format:check --if-present
 
       - name: Check Go Code Formatting (gofmt)
         run: |

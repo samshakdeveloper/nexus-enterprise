@@ -1,7 +1,7 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest'; // یا 'jest'
-import { setupTestDatabase, teardownTestDatabase, clearOutboxTable } from './setup/postgres-container';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest"; // یا 'jest'
+import { setupTestDatabase, teardownTestDatabase, clearOutboxTable } from "./setup/postgres-container";
 
-describe('OutboxRepositoryAdapter Integration Tests', () => {
+describe("OutboxRepositoryAdapter Integration Tests", () => {
   let db: any;
 
   beforeAll(async () => {
@@ -17,7 +17,7 @@ describe('OutboxRepositoryAdapter Integration Tests', () => {
     if (db) await clearOutboxTable(db);
   });
 
-  it('should successfully setup test database and verify outbox table', async () => {
+  it("should successfully setup test database and verify outbox table", async () => {
     expect(db).toBeDefined();
   });
 });
