@@ -72,14 +72,14 @@ func (k *KafkaPDFConsumer) HandleMessage(ctx context.Context, msg *sarama.Consum
 
 	if err := proto.Unmarshal(msg.Value, cmd); err != nil {
 		log.Printf("Received raw string/JSON message: %s", string(msg.Value))
-		cmd.PdfId = "test-id"
+		cmd.Id = "test-id"
 		cmd.HtmlContent = string(msg.Value)
 	}
 
-	log.Printf("Processing PDF Request ID: %s", cmd.PdfId)
+	log.Printf("Processing PDF Request ID: %s", cmd.GetId())
 
 	// اجرای UseCase اصلی
-	result, err := k.useCase.Execute(ctx, cmd.PdfId, cmd.HtmlContent)
+	result, err := k.useCase.Execute(ctx, cmd.GetId(), cmd.GetHtmlContent())
 	if err != nil {
 		log.Printf("Error in PDF pipeline: %v", err)
 		return err
@@ -87,12 +87,11 @@ func (k *KafkaPDFConsumer) HandleMessage(ctx context.Context, msg *sarama.Consum
 
 	log.Printf("PDF generated and uploaded successfully! FileKey: %s, URL: %s", result.FileKey, result.PresignedURL)
 
-	// ساخت پاسخ بر اساس Claim-Check Pattern (ارسال آدرس فایل به‌جای بایت‌های فایل)
+	// ساخت پاسخ بر اساس Claim-Check Pattern
 	response := &pb.PdfGeneratedEvent{
-		PdfId:         result.PdfID,
-		FileSizeBytes: result.FileSize,
-		IsSuccess:     true,
-		// توجه: اکستنشن Proto باید فیلد file_key یا presigned_url رو داشته باشه
+		Id:      result.PdfID,
+		FileUrl: result.PresignedURL,
+		Success: true,
 	}
 
 	outBytes, err := proto.Marshal(response)
@@ -102,7 +101,7 @@ func (k *KafkaPDFConsumer) HandleMessage(ctx context.Context, msg *sarama.Consum
 
 	_, _, err = k.producer.SendMessage(&sarama.ProducerMessage{
 		Topic: "nexus.pdf.generated",
-		Key:   sarama.StringEncoder(cmd.PdfId),
+		Key:   sarama.StringEncoder(cmd.GetId()),
 		Value: sarama.ByteEncoder(outBytes),
 	})
 

@@ -1,3 +1,6 @@
 npm run lint
 npm run format
-npm test
+npm run format:go
+npm run format:check:go
+npm run test
+npm run test:go

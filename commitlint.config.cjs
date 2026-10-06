@@ -17,6 +17,10 @@ module.exports = {
         "revert", // بازگردانی کامیت
       ],
     ],
-    "scope-enum": [2, "always", ["root", "api", "web", "domain", "application", "infrastructure", "shared"]],
+    "scope-enum": [2, "always", [
+        "root", "ci",  "api", "web", "domain", "application",
+      "infrastructure", "shared","pdf-worker",
+      "email-worker",
+      "event-worker"]],
   },
 };

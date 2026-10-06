@@ -2,7 +2,7 @@ import { OutboxRepositoryPort, OutboxMessage } from "@nexus/application";
 import { PostgresInstanceAdapter } from "@nexus/infrastructure";
 import { Kysely, sql } from "kysely";
 
-import { loadEnv } from "../../config/env.js";
+import { loadEnv } from "../config/env.js";
 
 export class OutboxRepositoryAdapter implements OutboxRepositoryPort {
   private readonly db: Kysely<unknown>;

@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"context"
 	"bytes"
+	"context"
 	"github.com/jung-kurt/gofpdf"
 	"nexus-enterprise/pdf-worker/internal/ports"
 )
