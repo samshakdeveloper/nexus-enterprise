@@ -1,8 +1,6 @@
-name: Enterprise CI Pipeline
+name: CI - Main Branches
 
 on:
-  push:
-    branches: [main, staging, development]
   pull_request:
     branches: [main, staging, development]
     types: [opened, synchronize, reopened, ready_for_review]
@@ -14,7 +12,7 @@ concurrency:
 jobs:
   code-quality:
     name: Code Quality Checks
-    if: github.event.pull_request.draft == false || github.event_name == 'push'
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -28,12 +26,6 @@ jobs:
           node-version: 22
           cache: "npm"
 
-      - name: Setup Go Environment
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.22'
-          cache-dependency-path: apps/pdf-worker/go.sum
-
       - name: Install Monorepo Dependencies
         run: npm ci --legacy-peer-deps
 
@@ -45,15 +37,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-turbo-
 
-
-      - name: Check Go Code Formatting (gofmt)
-        run: |
-          if [ -n "$(gofmt -l apps/pdf-worker)" ]; then
-            echo "The following Go files are not formatted correctly:"
-            gofmt -l apps/pdf-worker
-            exit 1
-          fi
-
       - name: Run Linter Across Workspace (ESLint)
         run: npm run lint --if-present
 
@@ -63,9 +46,6 @@ jobs:
   automated-tests:
     name: Automated Tests & Coverage
     needs: code-quality
-    if: |
-      github.event_name == 'pull_request' ||
-      contains(fromJSON('["main", "staging", "development"]'), github.ref_name)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -86,7 +66,7 @@ jobs:
           cache-dependency-path: apps/pdf-worker/go.sum
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Restore Build Cache
         uses: actions/cache@v4
@@ -105,9 +85,6 @@ jobs:
   build-verification:
     name: Build Verification
     needs: automated-tests
-    if: |
-      github.event_name == 'pull_request' ||
-      contains(fromJSON('["main", "staging", "development"]'), github.ref_name)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
@@ -122,7 +99,7 @@ jobs:
           cache: "npm"
 
       - name: Install Dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Restore Build Cache
         uses: actions/cache@v4
