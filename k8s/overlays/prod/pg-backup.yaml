@@ -7,22 +7,22 @@ metadata:
 spec:
   retentionPolicy: "30d"
   configuration:
-    destinationPath: s3://nexus-pg-backups/      # TODO
-    endpointURL: https://s3.eu.example.com       # TODO
+    destinationPath: s3://nexus-pg-backups/ # TODO
+    endpointURL: https://s3.eu.example.com # TODO
     s3Credentials:
-      accessKeyId: {name: nexus-pg-backup-s3, key: ACCESS_KEY_ID}
-      secretAccessKey: {name: nexus-pg-backup-s3, key: ACCESS_SECRET_KEY}
-    wal: {compression: gzip}
-    data: {compression: gzip}
+      accessKeyId: { name: nexus-pg-backup-s3, key: ACCESS_KEY_ID }
+      secretAccessKey: { name: nexus-pg-backup-s3, key: ACCESS_SECRET_KEY }
+    wal: { compression: gzip }
+    data: { compression: gzip }
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: ScheduledBackup
 metadata:
   name: nexus-pg-daily
 spec:
-  schedule: "0 0 2 * * *"          # شش‌فیلدی (با ثانیه) → هر شب ساعت 02:00
+  schedule: "0 0 2 * * *" # شش‌فیلدی (با ثانیه) → هر شب ساعت 02:00
   backupOwnerReference: self
   method: plugin
-  cluster: {name: nexus-pg}
+  cluster: { name: nexus-pg }
   pluginConfiguration:
     name: barman-cloud.cloudnative-pg.io

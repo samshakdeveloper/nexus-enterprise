@@ -22,24 +22,24 @@ spec:
         - alert: NexusApiDown
           expr: sum(up{job=~".*api.*", namespace=~"nexus-.*"}) == 0
           for: 2m
-          labels: {severity: critical}
+          labels: { severity: critical }
           annotations:
             summary: "API هیچ instance سالمی ندارد"
         - alert: NexusPodCrashLooping
           expr: increase(kube_pod_container_status_restarts_total{namespace=~"nexus-.*"}[15m]) > 3
           for: 5m
-          labels: {severity: warning}
+          labels: { severity: warning }
           annotations:
             summary: "{{ $labels.pod }} مرتب ری‌استارت می‌شود"
         - alert: NexusDeploymentReplicasMismatch
           expr: kube_deployment_status_replicas_available{namespace=~"nexus-.*"} < kube_deployment_spec_replicas{namespace=~"nexus-.*"}
           for: 10m
-          labels: {severity: warning}
+          labels: { severity: warning }
           annotations:
             summary: "Deployment {{ $labels.deployment }} کمتر از replica مطلوب دارد"
         - alert: NexusKafkaConsumerLag
           expr: sum by (consumergroup) (kafka_consumergroup_lag) > 1000
           for: 10m
-          labels: {severity: warning}
+          labels: { severity: warning }
           annotations:
             summary: "lag گروه {{ $labels.consumergroup }} بالاست"

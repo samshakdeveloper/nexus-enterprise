@@ -16,8 +16,8 @@ spec:
         size: 50Gi
         deleteClaim: false
   resources:
-    requests: {cpu: 500m, memory: 2Gi}
-    limits: {memory: 2Gi}
+    requests: { cpu: 500m, memory: 2Gi }
+    limits: { memory: 2Gi }
 ---
 apiVersion: kafka.strimzi.io/v1
 kind: Kafka

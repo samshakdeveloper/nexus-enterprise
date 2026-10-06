@@ -1,26 +1,22 @@
 // commitlint.config.cjs
 module.exports = {
-  extends: ['@commitlint/config-conventional'],
+  extends: ["@commitlint/config-conventional"],
   rules: {
-    'type-enum': [
+    "type-enum": [
       2,
-      'always',
+      "always",
       [
-        'feat',     // ویژگی جدید
-        'fix',      // رفع باگ
-        'docs',     // مستندات
-        'style',    // تغییرات ظاهری و کد استایل بدون تغییر منطق
-        'refactor', // بازنویسی کد
-        'perf',     // بهینه‌سازی کارایی
-        'test',     // اضافه کردن یا اصلاح تست‌ها
-        'chore',    // تغییرات در بیلد، ابزارها یا وابستگی‌ها
-        'revert',   // بازگردانی کامیت
+        "feat", // ویژگی جدید
+        "fix", // رفع باگ
+        "docs", // مستندات
+        "style", // تغییرات ظاهری و کد استایل بدون تغییر منطق
+        "refactor", // بازنویسی کد
+        "perf", // بهینه‌سازی کارایی
+        "test", // اضافه کردن یا اصلاح تست‌ها
+        "chore", // تغییرات در بیلد، ابزارها یا وابستگی‌ها
+        "revert", // بازگردانی کامیت
       ],
     ],
-    'scope-enum': [
-      2,
-      'always',
-      ['root', 'api', 'web', 'domain', 'application', 'infrastructure', 'shared'],
-    ],
+    "scope-enum": [2, "always", ["root", "api", "web", "domain", "application", "infrastructure", "shared"]],
   },
 };

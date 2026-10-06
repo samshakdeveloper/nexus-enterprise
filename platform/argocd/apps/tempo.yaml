@@ -13,7 +13,7 @@ spec:
   source:
     repoURL: https://grafana.github.io/helm-charts
     chart: tempo
-    targetRevision: "1.14.0"   # TODO: قبل از اعمال، آخرین نسخه‌ی پایدار را چک کن
+    targetRevision: "1.14.0" # TODO: قبل از اعمال، آخرین نسخه‌ی پایدار را چک کن
     helm:
       valuesObject:
         tempo:
@@ -21,14 +21,14 @@ spec:
           receivers:
             otlp:
               protocols:
-                http: {endpoint: "0.0.0.0:4318"}
-                grpc: {endpoint: "0.0.0.0:4317"}
+                http: { endpoint: "0.0.0.0:4318" }
+                grpc: { endpoint: "0.0.0.0:4317" }
         persistence:
           enabled: true
-          size: 10Gi   # TODO(prod): با حجم واقعی trace ها تنظیم کن
+          size: 10Gi # TODO(prod): با حجم واقعی trace ها تنظیم کن
         resources:
-          requests: {cpu: 100m, memory: 256Mi}
-          limits: {memory: 512Mi}
+          requests: { cpu: 100m, memory: 256Mi }
+          limits: { memory: 512Mi }
   syncPolicy:
-    automated: {prune: true, selfHeal: true}
+    automated: { prune: true, selfHeal: true }
     syncOptions: [CreateNamespace=true]
