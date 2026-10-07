@@ -1,60 +1,97 @@
-![Hexagonal Architecture Topology](../assets/hexagonal-architecture.png)
 # 🏛️ Domain-Driven Design & Hexagonal Architecture Layers
-تو این پوشه کدهای مربوط به تزریق تکنولوژی های بیرونی لایه ی اینفرا و لایه ی اپلیکیشن به کانتینر اصلی برنامه هستش
+
+This document outlines how architectural boundaries, layer separation, and dependency invariants are programmatically enforced within **Nexus Enterprise** .
+
+<p align="center">
+  <img src="../assets/hexagonal-architecture.png" alt="Hexagonal Architecture Topology" width="600" />
+</p>
+
+---
+
+## 🎛️ Dependency Injection & IoC Wiring
+
+The runtime application orchestrates and dynamically wires all external infrastructure adapters and application components through an Inversion of Control (IoC) container registry .
+
 * 📂 **Container Directory:** [`apps/api/src/container/`](../../apps/api/src/container/)
 
+For instance, core infrastructural dependencies are encapsulated and registered as singletons using class bindings :
 
-به عنوان مثال کد زیر در فایلی که در زیر مشخص کردم رو ببینین :
+```typescript
 userRepositoryPort: asClass(PostgresUserRepositoryAdapter).classic().singleton()
-* 🔗 **On Composition Root:** [`infrastructure.module.ts`](../../apps/api/src/container/modules/infrastructure.module.ts) 
+```
 
+* 🔗 **Composition Root:** [`infrastructure.module.ts`](../../apps/api/src/container/modules/infrastructure.module.ts)
 
-لایه ی اپلیکیشن و اینفرا کاملا مستقل از هم کار میکنند و با پورت و آداپتر به هم وصل شده اند
-اگر خواستیم دیتابیس را از postgres به mongodb یا هر دیتابیس دیگری تغییر بدیم بدون این که حتی یک خط کد از لایه ی اپلیکیشن تغییر کند اعمال میشود و فقط آداپتور دیتابیس به جای  PostgresUserRepositoryAdapter به مثلا MongodbUserRepositoryAdapter
-تغییر میکند
-به تصویر زیر دقت کنید :
-![port-adapter-application](../assets/port-adapter-application.png)
-----
+---
 
-به تصویر زیر دقت کنید :
-![Clean Architecture Layers](../assets/architecture-layers.svg)
+## 🔄 Strict Port & Adapter Isolation
 
- حالا به خط کد زیر دقت کنید :
- "boundaries/element-types": [
- "error",
- {
- default: "disallow",
- rules: [
- { from: "domain", allow: ["shared"] },
- { from: "application", allow: ["domain", "shared"] },
- { from: "infrastructure", allow: ["application", "domain", "shared"] },
- { from: "shared", allow: [] },
- { from: "app", allow: ["infrastructure", "application", "domain", "shared"] },
- ],
- },
- ]
+The application and infrastructure layers operate completely independent of one another, communicating strictly through boundary contracts (Ports) .
 
-این قوانین رو گذاشتم داخل فایل لینت :
-* 🔗 **lint config:** [`eslint.config.js`](../../eslint.config.js) 
-  
-با این قوانین هیچ کس حق نداره خلاف وابستگی پیش بره و لینت بهش ارور میده تو محیط کدنویسی 
-بطور مثال اگر از کدهای لایه ی انفرا بخوایم داخل لایه ی اپلیکیشن استفاده کنیم لینت بلافاصله ارور میده
+If the database engine needs to be migrated from **PostgreSQL** to **MongoDB** (or any other storage driver), the transition requires **zero changes** to the application core layer . Only the underlying infrastructure adapter needs to be swapped out (e.g., mapping `MongodbUserRepositoryAdapter` instead of `PostgresUserRepositoryAdapter` inside the container modules) .
 
-حالا این تصویر رو ببینید از محیط پایپلاین گیتهاب اکشن :
-![github-action-pipeline](../assets/github-action-pipeline.png)
+<p align="center">
+  <img src="../assets/port-adapter-application.png" alt="Port-Adapter Application Mapping" width="600" />
+</p>
 
-حالا توی کد :
+<p align="center">
+  <img src="../assets/architecture-layers.svg" alt="Clean Architecture Layers" width="600" />
+</p>
+
+---
+
+## 🚨 Boundary Verification & Automated Linting
+
+To prevent architectural drift and catch loose dependency leakage during local development, tight boundary constraints are programmatically enforced inside the static code analyzer matrices :
+
+```json
+"boundaries/element-types": [
+  "error",
+  {
+    "default": "disallow",
+    "rules": [
+      { "from": "domain", "allow": ["shared"] },
+      { "from": "application", "allow": ["domain", "shared"] },
+      { "from": "infrastructure", "allow": ["application", "domain", "shared"] },
+      { "from": "shared", "allow": [] },
+      { "from": "app", "allow": ["infrastructure", "application", "domain", "shared"] }
+    ]
+  }
+]
+```
+
+* 🔗 **ESLint Lint Configuration:** [`eslint.config.js`](../../eslint.config.js)
+
+With these rules implemented, any attempt to break the dependency graph (e.g., importing high-level `infrastructure` modules directly inside a low-level `application` layer service) will trigger an immediate lint error inside the developer's local IDE workspace .
+
+---
+
+## 🛡️ CI/CD Enforcement & Branch Protection Gates
+
+These boundaries do not rely on manual pull request audits . The structural dependency health is checked automatically across the distributed continuous integration lifecycle .
+
+<p align="center">
+  <img src="../assets/github-action-pipeline.png" alt="GitHub Actions Pipeline" width="700" />
+</p>
+
+During the automation pipeline verification suite, the runner compiles the workspace matrix :
+
+```yaml
 run: npm run lint --if-present
-داخل فایل ورکفلوی گیتهاب :
+```
 
-* 🔗 **lint check on GitHub Action :** [`ci-feature.yml`](../../.github/workflows/ci-feature.yml) 
-  
-تو این فایل گفتیم که گیتهاب اکشن بیاد و لینت رو چک کنه و اگر وابستگی اشتباه بود سمت کدهایی که به گیتهاب فرستاده میشه 
-گیت هاب اکشن فیلد میشه
-حتی توی رول های ریپازیتوری هم گذاشتم که اگر فیلد بشه اجازه مرج روی برنچ های اصلی داده نشه 
-تصاویر زیر رو ببینید :
-![img.png](../assets/img.png)
-![img_2.png](../assets/img_2.png)
-![img_1.png](../assets/img_1.png)
+* 🔗 **GitHub Action Workflow:** [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)
 
-موارد مربوط به تست ها و موارد دیگه رو هم در سرفصل مربوط به خودش توضیح دادم
+If an invalid dependency import leak occurs, the GitHub Action workflow instantly fails . Strict repository branch protection rules are established to completely block merging pull requests until all validation workflows pass .
+
+<p align="center">
+  <img src="../assets/img.png" alt="Branch Protection rule gate 1" width="500" />
+  <br />
+  <img src="../assets/img_2.png" alt="Branch Protection rule gate 2" width="500" />
+  <br />
+  <img src="../assets/img_1.png" alt="Branch Protection rule gate 3" width="500" />
+</p>
+
+---
+
+*💡 Deep dives concerning testing matrices, mock contexts, and integration coverage guidelines are detailed inside their respective technical runbooks.* 
