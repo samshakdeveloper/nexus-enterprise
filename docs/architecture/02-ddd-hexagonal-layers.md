@@ -12,15 +12,15 @@ This document outlines how architectural boundaries, layer separation, and depen
 
 The runtime application orchestrates and dynamically wires all external infrastructure adapters and application components through an Inversion of Control (IoC) container registry .
 
-* 📂 **Container Directory:** [`apps/api/src/container/`](../../apps/api/src/container/)
+- 📂 **Container Directory:** [`apps/api/src/container/`](../../apps/api/src/container/)
 
 For instance, core infrastructural dependencies are encapsulated and registered as singletons using class bindings :
 
 ```typescript
-userRepositoryPort: asClass(PostgresUserRepositoryAdapter).classic().singleton()
+userRepositoryPort: asClass(PostgresUserRepositoryAdapter).classic().singleton();
 ```
 
-* 🔗 **Composition Root:** [`infrastructure.module.ts`](../../apps/api/src/container/modules/infrastructure.module.ts)
+- 🔗 **Composition Root:** [`infrastructure.module.ts`](../../apps/api/src/container/modules/infrastructure.module.ts)
 
 ---
 
@@ -60,7 +60,7 @@ To prevent architectural drift and catch loose dependency leakage during local d
 ]
 ```
 
-* 🔗 **ESLint Lint Configuration:** [`eslint.config.js`](../../eslint.config.js)
+- 🔗 **ESLint Lint Configuration:** [`eslint.config.js`](../../eslint.config.js)
 
 With these rules implemented, any attempt to break the dependency graph (e.g., importing high-level `infrastructure` modules directly inside a low-level `application` layer service) will trigger an immediate lint error inside the developer's local IDE workspace .
 
@@ -80,7 +80,7 @@ During the automation pipeline verification suite, the runner compiles the works
 run: npm run lint --if-present
 ```
 
-* 🔗 **GitHub Action Workflow:** [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)
+- 🔗 **GitHub Action Workflow:** [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)
 
 If an invalid dependency import leak occurs, the GitHub Action workflow instantly fails . Strict repository branch protection rules are established to completely block merging pull requests until all validation workflows pass .
 
@@ -94,4 +94,4 @@ If an invalid dependency import leak occurs, the GitHub Action workflow instantl
 
 ---
 
-*💡 Deep dives concerning testing matrices, mock contexts, and integration coverage guidelines are detailed inside their respective technical runbooks.* 
+_💡 Deep dives concerning testing matrices, mock contexts, and integration coverage guidelines are detailed inside their respective technical runbooks._
