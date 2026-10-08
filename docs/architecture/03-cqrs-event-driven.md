@@ -98,4 +98,3 @@ await consumer.run({
 ```
 
 - **Consumer handler:** [`email-worker.handler.ts`](../../apps/email-worker/src/handlers/email-worker.handler.ts)
-

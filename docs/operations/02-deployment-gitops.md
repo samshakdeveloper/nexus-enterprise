@@ -21,15 +21,15 @@ The manifests are built with Kustomize. `base` has no namespace and no environme
 
 ## What runs in the cluster
 
-| Component       | How it runs                                                                                  |
-| --------------- | -------------------------------------------------------------------------------------------- |
-| `api`           | Deployment with 2 replicas and an autoscaler (2 to 10 replicas at 70% CPU), plus a Service and a PodDisruptionBudget |
-| `web`           | Deployment with 2 replicas, plus a Service                                                   |
-| `event-worker`, `email-worker`, `pdf-worker` | Deployments with 2 replicas each                                 |
-| PostgreSQL      | [CloudNativePG](https://cloudnative-pg.io) cluster `nexus-pg` with 3 instances. Apps connect to the `nexus-pg-rw` service |
-| Kafka           | [Strimzi](https://strimzi.io) cluster `nexus-kafka` in KRaft mode with 3 nodes. Bootstrap address: `nexus-kafka-kafka-bootstrap:9092` |
-| Traffic         | Gateway API with Envoy Gateway and HTTPS through cert-manager. `/api` goes to the API and everything else goes to `web`. HTTP is redirected to HTTPS |
-| Monitoring      | Prometheus, Alertmanager, Grafana, Loki and Tempo, installed by Argo CD in the `monitoring` namespace |
+| Component                                    | How it runs                                                                                                                                          |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api`                                        | Deployment with 2 replicas and an autoscaler (2 to 10 replicas at 70% CPU), plus a Service and a PodDisruptionBudget                                 |
+| `web`                                        | Deployment with 2 replicas, plus a Service                                                                                                           |
+| `event-worker`, `email-worker`, `pdf-worker` | Deployments with 2 replicas each                                                                                                                     |
+| PostgreSQL                                   | [CloudNativePG](https://cloudnative-pg.io) cluster `nexus-pg` with 3 instances. Apps connect to the `nexus-pg-rw` service                            |
+| Kafka                                        | [Strimzi](https://strimzi.io) cluster `nexus-kafka` in KRaft mode with 3 nodes. Bootstrap address: `nexus-kafka-kafka-bootstrap:9092`                |
+| Traffic                                      | Gateway API with Envoy Gateway and HTTPS through cert-manager. `/api` goes to the API and everything else goes to `web`. HTTP is redirected to HTTPS |
+| Monitoring                                   | Prometheus, Alertmanager, Grafana, Loki and Tempo, installed by Argo CD in the `monitoring` namespace                                                |
 
 The API rolls out without taking pods down (`maxUnavailable: 0`), and has startup, readiness and liveness probes on `/health/live` and `/health/ready`. The API and workers run as a non-root user with a read-only root filesystem and all Linux capabilities dropped. The event worker gets 60 seconds to shut down so it can finish its current batch.
 
@@ -82,13 +82,13 @@ The script (`scripts/k8s-deploy.ts`) does four things:
 
 Useful commands:
 
-| Command                          | What it does                                              |
-| -------------------------------- | --------------------------------------------------------- |
-| `npm run k8s:status`             | Show pods, services, routes, the Postgres cluster and Kafka |
-| `npm run k8s:redeploy`           | Rebuild images, apply the manifests, restart all deployments |
-| `npm run k8s:restart:all`        | Restart all deployments                                   |
-| `npm run k8s:clean:pods`         | Delete the Nexus pods so they are recreated               |
-| `npm run k8s:down`               | Delete everything from the dev overlay                    |
+| Command                   | What it does                                                 |
+| ------------------------- | ------------------------------------------------------------ |
+| `npm run k8s:status`      | Show pods, services, routes, the Postgres cluster and Kafka  |
+| `npm run k8s:redeploy`    | Rebuild images, apply the manifests, restart all deployments |
+| `npm run k8s:restart:all` | Restart all deployments                                      |
+| `npm run k8s:clean:pods`  | Delete the Nexus pods so they are recreated                  |
+| `npm run k8s:down`        | Delete everything from the dev overlay                       |
 
 `k8s:down` only removes the Nexus resources. The monitoring Applications and the operators stay installed.
 

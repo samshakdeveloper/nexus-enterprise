@@ -45,37 +45,37 @@ Delivery is at-least-once, so consumers must handle duplicate messages. See [CQR
 
 Deployable services. Each one has its own Dockerfile.
 
-| App            | Description                                      |
-| -------------- | ------------------------------------------------ |
-| `api`          | Fastify server exposing REST and GraphQL         |
-| `web`          | Next.js frontend                                 |
-| `event-worker` | Reads the outbox table and publishes to Kafka    |
-| `email-worker` | Consumes user events and sends emails            |
+| App            | Description                                        |
+| -------------- | -------------------------------------------------- |
+| `api`          | Fastify server exposing REST and GraphQL           |
+| `web`          | Next.js frontend                                   |
+| `event-worker` | Reads the outbox table and publishes to Kafka      |
+| `email-worker` | Consumes user events and sends emails              |
 | `pdf-worker`   | Go service that consumes events and generates PDFs |
 
 ### `packages/`
 
 Shared code used by the apps.
 
-| Package          | Description                                                                          |
-| ---------------- | ------------------------------------------------------------------------------------ |
-| `domain`         | Entities, value objects, aggregates and domain events                                |
-| `application`    | Commands, handlers and the ports they depend on                                      |
+| Package          | Description                                                                           |
+| ---------------- | ------------------------------------------------------------------------------------- |
+| `domain`         | Entities, value objects, aggregates and domain events                                 |
+| `application`    | Commands, handlers and the ports they depend on                                       |
 | `infrastructure` | Adapters: Postgres repositories, Kafka publisher, outbox, password hashing, telemetry |
-| `shared`         | Small utilities such as `Result` and the logger, clock and id-generator ports        |
-| `contracts`      | Protobuf definitions for events                                                      |
+| `shared`         | Small utilities such as `Result` and the logger, clock and id-generator ports         |
+| `contracts`      | Protobuf definitions for events                                                       |
 
 ### `.github/` and `.husky/`
 
 Checks run in two places: locally before a commit, and in CI before a merge.
 
 - [`.github/workflows/`](../../.github/workflows/)
-    - `ci-feature.yml` runs lint on pushes to feature branches.
-    - `ci-main.yml` runs on pull requests to `development`, `staging` and `main`. It runs lint, type checks, TypeScript and Go tests with coverage, and a full build.
-    - `enforce-branch-pipeline.yml` only allows `development` → `staging` → `main` as the merge path.
+  - `ci-feature.yml` runs lint on pushes to feature branches.
+  - `ci-main.yml` runs on pull requests to `development`, `staging` and `main`. It runs lint, type checks, TypeScript and Go tests with coverage, and a full build.
+  - `enforce-branch-pipeline.yml` only allows `development` → `staging` → `main` as the merge path.
 - [`.husky/`](../../.husky/)
-    - `pre-commit` runs lint, formatting and the TypeScript and Go tests.
-    - `commit-msg` validates the commit message with commitlint.
+  - `pre-commit` runs lint, formatting and the TypeScript and Go tests.
+  - `commit-msg` validates the commit message with commitlint.
 
 ### `monitoring/`
 

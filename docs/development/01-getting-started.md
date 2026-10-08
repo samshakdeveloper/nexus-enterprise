@@ -41,15 +41,15 @@ npm run migrate
 
 Compose starts Postgres, Kafka, Redis, MinIO, the `api`, `web`, `event-worker`, `email-worker` and `pdf-worker` services, and Prometheus, Loki, Tempo and Grafana.
 
-| What                | URL                           |
-| ------------------- | ----------------------------- |
-| API                 | http://localhost:3000         |
-| Swagger UI          | http://localhost:3000/docs    |
-| GraphQL             | http://localhost:3000/graphql |
-| Web                 | http://localhost:3001         |
-| Grafana             | http://localhost:3090         |
-| Prometheus          | http://localhost:9090         |
-| MinIO console       | http://localhost:9001         |
+| What          | URL                           |
+| ------------- | ----------------------------- |
+| API           | http://localhost:3000         |
+| Swagger UI    | http://localhost:3000/docs    |
+| GraphQL       | http://localhost:3000/graphql |
+| Web           | http://localhost:3001         |
+| Grafana       | http://localhost:3090         |
+| Prometheus    | http://localhost:9090         |
+| MinIO console | http://localhost:9001         |
 
 Swagger UI is off by default and turned on in `docker-compose.yml` with `SWAGGER_UI_ENABLED=true`.
 
@@ -97,13 +97,13 @@ KAFKA_BROKER=localhost:9092
 
 ## Useful commands
 
-| Command                  | What it does                                      |
-| ------------------------ | ------------------------------------------------- |
-| `npm run docker:down`    | Stop and remove all containers                    |
-| `npm run docker:rebuild` | Rebuild everything and recreate the containers    |
-| `npm run migrate`        | Run database migrations                           |
-| `npm run generate:graphql` | Regenerate the GraphQL schema                   |
-| `npm run clean`          | Delete build output                               |
+| Command                    | What it does                                   |
+| -------------------------- | ---------------------------------------------- |
+| `npm run docker:down`      | Stop and remove all containers                 |
+| `npm run docker:rebuild`   | Rebuild everything and recreate the containers |
+| `npm run migrate`          | Run database migrations                        |
+| `npm run generate:graphql` | Regenerate the GraphQL schema                  |
+| `npm run clean`            | Delete build output                            |
 
 ## Troubleshooting
 

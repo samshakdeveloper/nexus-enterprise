@@ -2,14 +2,14 @@
 
 This document lists the rules the code has to follow and where each one is checked.
 
-| Rule               | Tool         | Checked in                          |
-| ------------------ | ------------ | ----------------------------------- |
-| Code formatting    | Prettier     | `npm run format`, pre-commit hook   |
-| Go formatting      | gofmt        | `npm run format:go`, pre-commit hook |
-| Linting and layers | ESLint       | pre-commit hook, CI                 |
-| Commit messages    | commitlint   | `commit-msg` hook                   |
-| Tests and build    | Vitest, Go   | pre-commit hook, CI                 |
-| Merge path         | GitHub Actions | pull requests                     |
+| Rule               | Tool           | Checked in                           |
+| ------------------ | -------------- | ------------------------------------ |
+| Code formatting    | Prettier       | `npm run format`, pre-commit hook    |
+| Go formatting      | gofmt          | `npm run format:go`, pre-commit hook |
+| Linting and layers | ESLint         | pre-commit hook, CI                  |
+| Commit messages    | commitlint     | `commit-msg` hook                    |
+| Tests and build    | Vitest, Go     | pre-commit hook, CI                  |
+| Merge path         | GitHub Actions | pull requests                        |
 
 ## Formatting
 

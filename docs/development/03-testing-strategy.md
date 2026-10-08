@@ -4,12 +4,12 @@ TypeScript code is tested with [Vitest](https://vitest.dev). The Go `pdf-worker`
 
 ## Kinds of tests
 
-| Level       | What it checks                                         | Examples                                                                 |
-| ----------- | ------------------------------------------------------ | ------------------------------------------------------------------------ |
-| Unit        | One class or function, with no external services       | Value objects and the `User` aggregate, `CreateUserHandler`, the password policy, `Result`, the bcrypt hasher, the email worker handler |
-| Integration | An adapter against a Postgres-compatible database      | The user repository, the outbox repository of `event-worker`             |
-| End-to-end  | One use case through the HTTP layer of the API         | `create-user.e2e.spec.ts`                                                |
-| Go          | The `pdf-worker` internals                             | PDF generator, Kafka consumer, use case                                  |
+| Level       | What it checks                                    | Examples                                                                                                                                |
+| ----------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Unit        | One class or function, with no external services  | Value objects and the `User` aggregate, `CreateUserHandler`, the password policy, `Result`, the bcrypt hasher, the email worker handler |
+| Integration | An adapter against a Postgres-compatible database | The user repository, the outbox repository of `event-worker`                                                                            |
+| End-to-end  | One use case through the HTTP layer of the API    | `create-user.e2e.spec.ts`                                                                                                               |
+| Go          | The `pdf-worker` internals                        | PDF generator, Kafka consumer, use case                                                                                                 |
 
 ### Unit tests
 
@@ -54,6 +54,3 @@ Each package's own `test` script runs `vitest run --dir test`, and uses `--passW
 ## In CI
 
 Pull requests run `npm run test:coverage` and `npm run test:go` in the `Automated Tests & Coverage` job of `ci-main.yml`. The job only starts after lint passes. The pre-commit hook also runs `npm run test` and `npm run test:go` (see [Engineering Standards](02-standards-enforcement.md)).
-
-
-

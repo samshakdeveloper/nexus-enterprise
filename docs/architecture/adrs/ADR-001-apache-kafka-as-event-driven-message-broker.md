@@ -56,4 +56,3 @@ Nexus is a reference implementation of this architecture, so it uses Kafka even 
 - **RabbitMQ or a similar message queue.** Easier to run and good for task queues. Messages are removed once they are handled, so there is no replay.
 - **A job queue in the database or Redis.** Works well inside one service and one language. It is harder to share between services written in different languages.
 - **No broker.** Everything runs in one process. This is the right choice for small systems.
-
