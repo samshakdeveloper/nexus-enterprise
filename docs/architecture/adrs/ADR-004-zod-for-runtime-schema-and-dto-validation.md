@@ -1,7 +1,7 @@
 # ADR-004: Use Zod as the single schema and validation boundary
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 
@@ -26,7 +26,7 @@ We use **Zod** as the single source of truth for external data shapes:
 - **Documentation:** the OpenAPI specification and Swagger UI are generated
   from the same schemas, and the GraphQL schema is derived from that
   OpenAPI document (see ADR-002). There is no hand-written API documentation.
-- **Layering:** Zod validates the *shape* of incoming data at the boundary.
+- **Layering:** Zod validates the _shape_ of incoming data at the boundary.
   Business rules (for example, an email that is well-formed but already
   taken) are validated by the domain. The two layers have different jobs.
   Zod stays in the presentation and configuration layers; the domain and

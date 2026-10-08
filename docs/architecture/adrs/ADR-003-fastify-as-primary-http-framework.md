@@ -1,7 +1,7 @@
 # ADR-003: Use Fastify as the HTTP framework behind a port/adapter boundary
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 
