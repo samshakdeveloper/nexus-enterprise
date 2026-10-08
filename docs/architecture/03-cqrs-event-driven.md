@@ -1,6 +1,6 @@
-# 🏛️ CQRS & Asynchronous Event-Driven Architecture
+# CQRS & Asynchronous Event-Driven Architecture
 
-This document describes the event-driven topology, message orchestration lifecycle, and transactional outbox patterns implemented within **Nexus Enterprise** to guarantee eventual consistency across microservices .
+This document describes the event-driven design, the lifecycle of a message, and the transactional outbox pattern used in **Nexus Enterprise** to keep services eventually consistent.
 
 <p align="center">
   <img src="../assets/03/event-driven-kafka.svg" alt="Event-Driven Apache Kafka Pipeline" width="750" />
@@ -8,31 +8,31 @@ This document describes the event-driven topology, message orchestration lifecyc
 
 ---
 
-## ⚡ Asynchronous Architecture Design
+## Asynchronous Design
 
-To achieve deep service decoupling and high resilience, all core mutating command side-effects are decoupled using the **Transactional Outbox Pattern** alongside **Apache Kafka** transaction logs .
+To decouple services and make the system more resilient, the side effects of commands are handled with the **Transactional Outbox** pattern and **Apache Kafka**.
 
-### 🛡️ Crash Resilience and Eventual Consistency
+### Crash Resilience and Eventual Consistency
 
-If a downstream messaging adapter (e.g., the notification or email worker engine) crashes, the global system transactional state remains completely unhindered . The atomic state change is locally guarded inside the source outbox log . Upon recovery, consumer loops automatically resubscribe from their last committed transaction offsets, processing pending jobs with zero message loss .
+If a downstream consumer (for example the email worker) crashes, the rest of the system keeps working. The state change is already saved in the outbox. When the consumer comes back, it resubscribes and continues from its last committed offset, and the pending jobs are processed without losing any messages.
 
 ---
 
-## 🔀 Step-by-Step Message Lifecycle & Code Mapping
+## Message Lifecycle
 
-### Step 1: Transactional Outbox Staging
+### Step 1: Writing to the outbox
 
-Domain aggregate events are pulled and tracked into the outbox system repository atomically inside the initial core database transaction block .
+The domain events of the aggregate are pulled and saved to the outbox in the same database transaction as the main change.
 
 ```typescript
 await this.deps.eventPublisherPort.publish(userAggregate.pullDomainEvents());
 ```
 
-- 🔗 **Command Handler:** [`create-user.handler.ts`](../../packages/application/src/users/commands/create-user/create-user.handler.ts)
+- **Command handler:** [`create-user.handler.ts`](../../packages/application/src/users/commands/create-user/create-user.handler.ts)
 
-### Step 2: Batch Querying Unprocessed Logs
+### Step 2: Fetching unprocessed rows
 
-The isolated database background worker engine polls for untracked transaction mutations (`processed_at IS NULL`) up to defined structural limits .
+The event worker polls the outbox for rows that have not been processed yet (`processed_at IS NULL`), up to a batch size.
 
 ```typescript
 async fetchPendingMessages(batchSize: number): Promise<OutboxMessage[]> {
@@ -50,11 +50,11 @@ async fetchPendingMessages(batchSize: number): Promise<OutboxMessage[]> {
 }
 ```
 
-- 🔗 **Outbox Infrastructure Adapter:** [`outbox-repository.adapter.ts`](../../apps/event-worker/src/adapters/outbox-repository.adapter.ts)
+- **Outbox adapter:** [`outbox-repository.adapter.ts`](../../apps/event-worker/src/adapters/outbox-repository.adapter.ts)
 
-### Step 3: Reliable Kafka Broker Dispatch & Acknowledgment
+### Step 3: Publishing to Kafka
 
-For every targeted uncommitted entry, the worker wraps payloads within cloud-event tracking schemas, dispatches messages to dedicated stream channels, and flags execution stamps safely .
+For each pending row, the worker wraps the payload in an event envelope, publishes it to the Kafka topic, and then marks the row as processed.
 
 ```typescript
 const pendingMessages = await this.outboxRepo.fetchPendingMessages(50);
@@ -76,19 +76,19 @@ for (const message of pendingMessages) {
 }
 ```
 
-### Step 4: Stream Channel Subscription
+### Step 4: Subscribing to the topic
 
-Target asynchronous isolated execution nodes (e.g., `email-worker`) subscribe natively to the message streams without any internal direct workspace dependencies .
+Consumers such as `email-worker` subscribe to the Kafka topic directly, without depending on the other services.
 
 ```typescript
 await consumer.subscribe({ topic: DomainEventTopics.USER_EVENTS, fromBeginning: false });
 ```
 
-- 🔗 **Consumer Entrypoint:** [`email-worker.ts`](../../apps/email-worker/src/email-worker.ts)
+- **Consumer entrypoint:** [`email-worker.ts`](../../apps/email-worker/src/email-worker.ts)
 
-### Step 5: Isolated Worker Delivery Execution
+### Step 5: Handling the message
 
-Messages are passed directly to targeted pipeline handlers with manual commit cycles enabled, preserving strict data acknowledgment safety gates .
+Each message is passed to the worker's handler. Auto-commit is turned off, so the handler decides when a message is acknowledged.
 
 ```typescript
 await consumer.run({
@@ -97,4 +97,5 @@ await consumer.run({
 });
 ```
 
-- 🔗 **Consumer Execution Handler:** [`email-worker.handler.ts`](../../apps/email-worker/src/handlers/email-worker.handler.ts)
+- **Consumer handler:** [`email-worker.handler.ts`](../../apps/email-worker/src/handlers/email-worker.handler.ts)
+

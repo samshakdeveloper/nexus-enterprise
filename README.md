@@ -46,3 +46,15 @@ To maintain scalability, our documentation is isolated by domain context and eng
 
 - [Full-Stack Observability Guide](docs/operations/01-observability-guide.md) — Tracing with OpenTelemetry and metrics exposure via Grafana.
 - [GitOps Infrastructure & Orchestration](docs/operations/02-deployment-gitops.md) — Kubernetes configurations and state sync using ArgoCD.
+
+
+## 🤝 How I Work
+
+- **Remote and written.** I work asynchronously and keep communication in text: written updates and threaded discussions rather than meetings. Decisions are recorded in [ADRs](docs/architecture/adrs), and setup and operations in runbooks, so the team never depends on me being online.
+- **Docs next to code.** Documentation is part of the change. If the code changes, the docs change in the same pull request.
+- **Small scoped start.** I'm happy to begin with a small, well-defined task so we can both check the fit before committing to a larger scope.
+
+📫 Contact: samshakdeveloper@proton.me
+
+
+

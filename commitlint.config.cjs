@@ -19,7 +19,7 @@ module.exports = {
     ],
     "scope-enum": [2, "always", [
        "monitoring", "architecture","root", "ci",  "api", "web", "domain", "application",
-      "infrastructure", "shared","pdf-worker",
+      "infra", "infrastructure", "shared","pdf-worker",
       "email-worker",
       "event-worker"]],
   },

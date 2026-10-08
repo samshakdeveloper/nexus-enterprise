@@ -1,6 +1,6 @@
-# 🏛️ Domain-Driven Design & Hexagonal Architecture Layers
+# Domain-Driven Design & Hexagonal Architecture Layers
 
-This document outlines how architectural boundaries, layer separation, and dependency invariants are programmatically enforced within **Nexus Enterprise** .
+This document explains how the architectural boundaries and layer separation in **Nexus Enterprise** are enforced in code.
 
 <p align="center">
   <img src="../assets/hexagonal-architecture.png" alt="Hexagonal Architecture Topology" width="600" />
@@ -8,27 +8,27 @@ This document outlines how architectural boundaries, layer separation, and depen
 
 ---
 
-## 🎛️ Dependency Injection & IoC Wiring
+## Dependency Injection
 
-The runtime application orchestrates and dynamically wires all external infrastructure adapters and application components through an Inversion of Control (IoC) container registry .
+The app wires all infrastructure adapters and application components together through an Inversion of Control (IoC) container.
 
-- 📂 **Container Directory:** [`apps/api/src/container/`](../../apps/api/src/container/)
+- **Container directory:** [`apps/api/src/container/`](../../apps/api/src/container/)
 
-For instance, core infrastructural dependencies are encapsulated and registered as singletons using class bindings :
+For example, core infrastructure dependencies are registered as singletons using class bindings:
 
 ```typescript
 userRepositoryPort: asClass(PostgresUserRepositoryAdapter).classic().singleton();
 ```
 
-- 🔗 **Composition Root:** [`infrastructure.module.ts`](../../apps/api/src/container/modules/infrastructure.module.ts)
+- **Composition root:** [`infrastructure.module.ts`](../../apps/api/src/container/modules/infrastructure.module.ts)
 
 ---
 
-## 🔄 Strict Port & Adapter Isolation
+## Ports and Adapters
 
-The application and infrastructure layers operate completely independent of one another, communicating strictly through boundary contracts (Ports) .
+The application and infrastructure layers don't depend on each other directly. They talk through ports (boundary contracts).
 
-If the database engine needs to be migrated from **PostgreSQL** to **MongoDB** (or any other storage driver), the transition requires **zero changes** to the application core layer . Only the underlying infrastructure adapter needs to be swapped out (e.g., mapping `MongodbUserRepositoryAdapter` instead of `PostgresUserRepositoryAdapter` inside the container modules) .
+So if you need to move from **PostgreSQL** to **MongoDB** (or any other storage), the application layer doesn't change. You only swap the infrastructure adapter, for example by registering a `MongodbUserRepositoryAdapter` instead of `PostgresUserRepositoryAdapter` in the container modules.
 
 <p align="center">
   <img src="../assets/port-adapter-application.png" alt="Port-Adapter Application Mapping" width="600" />
@@ -40,9 +40,9 @@ If the database engine needs to be migrated from **PostgreSQL** to **MongoDB** (
 
 ---
 
-## 🚨 Boundary Verification & Automated Linting
+## Boundary Verification & Linting
 
-To prevent architectural drift and catch loose dependency leakage during local development, tight boundary constraints are programmatically enforced inside the static code analyzer matrices :
+To stop architectural drift and catch bad imports early, the layer rules are enforced with ESLint:
 
 ```json
 "boundaries/element-types": [
@@ -60,29 +60,29 @@ To prevent architectural drift and catch loose dependency leakage during local d
 ]
 ```
 
-- 🔗 **ESLint Lint Configuration:** [`eslint.config.js`](../../eslint.config.js)
+- **ESLint config:** [`eslint.config.js`](../../eslint.config.js)
 
-With these rules implemented, any attempt to break the dependency graph (e.g., importing high-level `infrastructure` modules directly inside a low-level `application` layer service) will trigger an immediate lint error inside the developer's local IDE workspace .
+With these rules, any import that breaks the dependency direction (for example, a service in `application` importing from `infrastructure`) is reported as a lint error in the developer's IDE.
 
 ---
 
-## 🛡️ CI/CD Enforcement & Branch Protection Gates
+## CI/CD Enforcement & Branch Protection
 
-These boundaries do not rely on manual pull request audits . The structural dependency health is checked automatically across the distributed continuous integration lifecycle .
+These boundaries don't depend on manual review of pull requests. They are checked automatically in CI.
 
 <p align="center">
   <img src="../assets/github-action-pipeline.png" alt="GitHub Actions Pipeline" width="700" />
 </p>
 
-During the automation pipeline verification suite, the runner compiles the workspace matrix :
+The pipeline runs lint:
 
 ```yaml
 run: npm run lint --if-present
 ```
 
-- 🔗 **GitHub Action Workflow:** [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)
+- **GitHub Action workflow:** [`ci-feature.yml`](../../.github/workflows/ci-feature.yml)
 
-If an invalid dependency import leak occurs, the GitHub Action workflow instantly fails . Strict repository branch protection rules are established to completely block merging pull requests until all validation workflows pass .
+If an invalid import gets in, the workflow fails. Branch protection rules block merging a pull request until all checks pass.
 
 <p align="center">
   <img src="../assets/img.png" alt="Branch Protection rule gate 1" width="500" />
@@ -94,4 +94,4 @@ If an invalid dependency import leak occurs, the GitHub Action workflow instantl
 
 ---
 
-_💡 Deep dives concerning testing matrices, mock contexts, and integration coverage guidelines are detailed inside their respective technical runbooks._
+_More on testing, mocks and integration coverage is in the technical runbooks._

@@ -1,74 +1,103 @@
-# 🏛️ Enterprise Workspace Topology & Directory Structure
+# Workspace Topology
 
-This document defines the physical layout, package organization, and unidirectional dependency structures governing the **Nexus Enterprise** monorepo .
+This document describes how the Nexus Enterprise monorepo is laid out and which parts of the code are allowed to depend on which.
 
 <p align="center">
-  <img src="../assets/01/topology-layers-workspaces.svg" alt="Workspace and Architecture Topology" width="750" />
+  <img src="../assets/01/topology-layers-workspaces.svg" alt="Workspace and architecture topology" width="750" />
 </p>
 
 ---
 
-## 🔄 Unidirectional Dependency & Boundary Invariants
+## Dependency direction
 
-The workspace is split into decoupled layers . Dependencies follow a strict, one-way inward trajectory . Changes made to outer layers have **zero ripple effects** on core internal structures :
+The code is split into layers, and dependencies only point inward:
 
-- Altering the delivery code within `apps/` causes absolutely zero disruption to infrastructure, application, or domain boundaries .
-- Application use-case refactoring maintains a strict zero-dependency footprint regarding the pure domain core .
+`shared` ← `domain` ← `application` ← `infrastructure` ← `apps`
 
-### 🔀 Microservice Isolation & Event-Driven Autonomy
+An inner layer never imports from an outer one. The rule is checked by ESLint, so a wrong import fails the lint step (details in [DDD & Hexagonal Layers](02-ddd-hexagonal-layers.md)).
 
-Runtime microservices are entirely isolated from one another, sharing no database instances or direct network couplings . Communication is orchestrated exclusively via **Apache Kafka** transaction logs .
+In practice this means:
 
-- **The Outbox Decoupling Model:** Transaction state changes insert a job record into a local Outbox table . An autonomous database event-worker polls this log, marks the processing state (`processed_at`), and streams the transaction record directly to Kafka . Downstream target consumers handle the event asynchronously, making the microservices completely agnostic to each other's native language runtimes or infrastructure .
-
----
-
-## 📁 Centralized Workspace Blueprints
-
-### 1. Applications (`apps/`)
-
-Exclusively contains standalone, deployable runtimes . Each gateway, microservice, or worker loop within [`apps/`](../../apps/) operates on an independent Docker image ecosystem .
-
-- 📂 **Edge Gateway & API:** Exposes external HTTP/GraphQL routing capabilities .
-- 📂 **Event Workers:** Autonomous background worker loops specialized in processing outbox records .
-
-### 2. Internal Packages (`packages/`)
-
-The reusable core of the monorepo consumed directly by our microservices and API runtimes .
-
-- 📂 **Domain Core:** Framework-agnostic entity boundaries and contract ports .
-- 📂 **Infrastructure Packages:** Explicit adapter implementations (`infra-kafka`, `infra-redis`) .
-
-### 3. Pipeline & Automation Gates (`.github/` & `.husky/`)
-
-- 📂 [`.github/workflows/`](../../.github/workflows/) — Automated continuous integration suites validating strict linting, unit tests, integration test configurations, and E2E testing matrices before blocking pull request merges .
-- 📂 [`.husky/`](../../.husky/) — Local lifecycle Git hooks mirroring CI validation parameters inside the developer's local environment prior to committing code .
-
-### 4. High-Observability Ecosystem (`monitoring/`)
-
-- 📂 [`monitoring/`](../../monitoring/) — Infrastructure configurations spinning up the complete observability triad: **Grafana Tempo** (Distributed Tracing), **Prometheus** (Metrics), and **Grafana Loki** (Log Aggregation) to map end-to-end transaction contexts across Kafka brokers .
+- You can change delivery code in `apps/` (routes, controllers, plugins) without touching `domain`, `application` or `infrastructure`.
+- `domain` imports nothing except `shared`, so refactoring a use case in `application` never forces a change in `domain`.
 
 ---
 
-## ⚡ Turborepo Task Pipelines (`turbo.json`)
+## How services communicate
 
-Task dependencies and caching strategies are defined globally within the root layout to leverage Directed Acyclic Graph (DAG) task scheduling and Remote Caching optimizations :
+Services do not call each other over HTTP. They communicate through Kafka, using the transactional outbox pattern:
+
+1. The API saves the business change and an outbox row in the same Postgres transaction.
+2. `event-worker` polls the outbox table, publishes each event to Kafka, and then sets `processed_at` on the row.
+3. Other workers (`email-worker`, `pdf-worker`) consume the events from Kafka.
+
+`event-worker` is the one service that connects to the API's Postgres database, because it has to read the outbox. The other workers never touch it.
+
+Because services only share Kafka messages, they can use different languages. `pdf-worker` is written in Go. The event contracts are defined as Protobuf files in `packages/contracts`.
+
+Delivery is at-least-once, so consumers must handle duplicate messages. See [CQRS & Event-Driven Architecture](03-cqrs-event-driven.md) for the full flow.
+
+---
+
+## Directory layout
+
+### `apps/`
+
+Deployable services. Each one has its own Dockerfile.
+
+| App            | Description                                      |
+| -------------- | ------------------------------------------------ |
+| `api`          | Fastify server exposing REST and GraphQL         |
+| `web`          | Next.js frontend                                 |
+| `event-worker` | Reads the outbox table and publishes to Kafka    |
+| `email-worker` | Consumes user events and sends emails            |
+| `pdf-worker`   | Go service that consumes events and generates PDFs |
+
+### `packages/`
+
+Shared code used by the apps.
+
+| Package          | Description                                                                          |
+| ---------------- | ------------------------------------------------------------------------------------ |
+| `domain`         | Entities, value objects, aggregates and domain events                                |
+| `application`    | Commands, handlers and the ports they depend on                                      |
+| `infrastructure` | Adapters: Postgres repositories, Kafka publisher, outbox, password hashing, telemetry |
+| `shared`         | Small utilities such as `Result` and the logger, clock and id-generator ports        |
+| `contracts`      | Protobuf definitions for events                                                      |
+
+### `.github/` and `.husky/`
+
+Checks run in two places: locally before a commit, and in CI before a merge.
+
+- [`.github/workflows/`](../../.github/workflows/)
+    - `ci-feature.yml` runs lint on pushes to feature branches.
+    - `ci-main.yml` runs on pull requests to `development`, `staging` and `main`. It runs lint, type checks, TypeScript and Go tests with coverage, and a full build.
+    - `enforce-branch-pipeline.yml` only allows `development` → `staging` → `main` as the merge path.
+- [`.husky/`](../../.husky/)
+    - `pre-commit` runs lint, formatting and the TypeScript and Go tests.
+    - `commit-msg` validates the commit message with commitlint.
+
+### `monitoring/`
+
+Configuration for Prometheus (metrics), Loki (logs), Tempo (traces) and Grafana, started with `docker-compose.monitoring.yml`. Each outbox row stores a trace ID that is passed along when the event is published to Kafka, so a request can be correlated across services. See the [Observability Guide](../operations/01-observability-guide.md).
+
+---
+
+## Turborepo tasks
+
+Task order and caching are defined once in [`turbo.json`](../../turbo.json). An excerpt:
 
 ```json
 {
-  "$schema": "https://turbo.build",
-  "pipeline": {
+  "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", ".next/**"]
+      "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
-    "lint": {},
-    "test": {
-      "dependsOn": ["^build"]
-    }
+    "lint": { "outputs": [] },
+    "test": { "outputs": [] }
   }
 }
 ```
 
-- 🔗 **Build Engine Configuration:** [`turbo.json`](../../turbo.json)
-- `^build` — Enforces a strict order of operations, ensuring all internal dependencies within the workspace topology are fully compiled before the host service executes its own build pipeline .
+`^build` means a package is only built after the packages it depends on are built. For example, `apps/api` waits for `domain`, `application` and `infrastructure`. CI keeps the `.turbo` cache folder between runs to speed up builds.
