@@ -1,7 +1,7 @@
 # ADR-008: Keep domain use cases few to keep the focus on architecture
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 
