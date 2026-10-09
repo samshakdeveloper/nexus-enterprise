@@ -22,15 +22,12 @@ export class OutboxProcessor {
           eventId: message.id,
           type: message.type,
           data: message.payload,
-          // اگر traceId نداشت، یک UUID جدید برای شروع Trace ایجاد می‌کنیم
           traceId: message.traceId ?? crypto.randomUUID(),
         };
         await this.messageBrokerPublisher.publish(topic, message.aggregateId, eventEnvelope, message.traceId);
 
-        // علامت‌گذاری به عنوان پردازش شده
         await this.outboxRepo.markAsProcessed(message.id);
       } catch (error) {
-        // مدیریت خطا و Retry در صورت نیاز
         console.error(`Failed to publish message ${message.id} to Kafka:`, error);
       }
     }
