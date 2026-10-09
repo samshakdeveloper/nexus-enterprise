@@ -69,7 +69,7 @@ export class EmailWorkerHandler {
       await this.mailProvider.send({
         to: data.email,
         subject: "welcome",
-        html: `<h1>سلام ${escapeHtml(fullName)}</h1>${
+        html: `<h1>hi ${escapeHtml(fullName)}</h1>${
           verificationCode ? `<p>verification code : <b>${escapeHtml(verificationCode)}</b></p>` : ""
         }`,
       });
