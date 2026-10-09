@@ -1,7 +1,7 @@
 # ADR-012: Use Turborepo for monorepo task and cache orchestration
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

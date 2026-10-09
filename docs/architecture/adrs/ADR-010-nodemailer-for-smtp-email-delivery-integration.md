@@ -1,7 +1,7 @@
 # ADR-003: Use Nodemailer behind an email provider port
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

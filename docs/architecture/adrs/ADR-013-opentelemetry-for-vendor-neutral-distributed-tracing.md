@@ -1,7 +1,7 @@
 # ADR-013: Use OpenTelemetry for vendor-neutral distributed tracing
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

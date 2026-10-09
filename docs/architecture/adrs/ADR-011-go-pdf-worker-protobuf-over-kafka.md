@@ -1,7 +1,7 @@
 # ADR-009: Implement the PDF worker in Go, communicating through Protobuf over Kafka
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

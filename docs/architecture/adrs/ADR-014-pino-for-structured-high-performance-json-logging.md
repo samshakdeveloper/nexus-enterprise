@@ -1,7 +1,7 @@
 # ADR-014: Use Pino for structured, high-performance JSON logging
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 
