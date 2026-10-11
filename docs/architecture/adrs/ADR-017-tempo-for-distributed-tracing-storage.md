@@ -1,7 +1,7 @@
 # ADR-017: Use Grafana Tempo for distributed trace storage
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

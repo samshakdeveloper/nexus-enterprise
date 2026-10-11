@@ -92,3 +92,15 @@ patches:
           default.replication.factor: 1
           min.insync.replicas: 1
           auto.create.topics.enable: true
+  # 👈 پچ سبک‌سازی منابع برای پادها (مخصوص تست لوکال و CPU ضعیف)
+  - target: { kind: Deployment, name: "(api|email-worker|event-worker|pdf-worker|web)" }
+    patch: |-
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 10m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi

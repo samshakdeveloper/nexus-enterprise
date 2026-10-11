@@ -98,3 +98,5 @@ docker-compose.override.yml
 *.ps1
 *.txt
 *.zip
+*.exe
+argo-pass.yaml

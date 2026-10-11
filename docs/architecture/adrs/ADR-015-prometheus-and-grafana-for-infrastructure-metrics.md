@@ -1,7 +1,7 @@
 # ADR-015: Use Prometheus and Grafana for infrastructure metrics
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

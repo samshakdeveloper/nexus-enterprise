@@ -14,6 +14,7 @@ COPY apps/pdf-worker/ ./
 RUN mkdir -p gen/pdf_v1
 RUN protoc --proto_path=/packages/contracts --go_out=./gen/pdf_v1 --go_opt=paths=source_relative pdf_events.proto
 
+RUN rm -f ./gen/pdf_v1/pdf_events.pb.go
 # دانلود پکیج‌ها با استفاده از کشِ هارد دیسک (BuildKit Cache)
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod tidy

@@ -1,7 +1,7 @@
 # ADR-021: Use Vitest for isolated unit and integration testing
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

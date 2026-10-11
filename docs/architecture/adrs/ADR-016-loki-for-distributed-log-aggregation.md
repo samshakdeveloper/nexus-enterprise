@@ -1,7 +1,7 @@
 # ADR-016: Use Loki for distributed log aggregation
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 
