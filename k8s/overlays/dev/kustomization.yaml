@@ -33,11 +33,11 @@ secretGenerator:
 
 # 👈 تنظیم دقیق نام ایمیج‌های لوکال برای Docker Desktop
 images:
-  - { name: nexus-api, newName: nexus-api, newTag: latest }
-  - { name: nexus-web, newName: nexus-web, newTag: latest }
-  - { name: nexus-email-worker, newName: nexus-email-worker, newTag: latest }
-  - { name: nexus-event-worker, newName: nexus-event-worker, newTag: latest }
-  - { name: nexus-pdf-worker, newName: nexus-pdf-worker, newTag: latest }
+  - { name: nexus-api, newName: nexus-api, newTag: dev-f0927bc
+  - { name: nexus-web, newName: nexus-web, newTag: dev-f0927bc
+  - { name: nexus-email-worker, newName: nexus-email-worker, newTag: dev-f0927bc
+  - { name: nexus-event-worker, newName: nexus-event-worker, newTag: dev-f0927bc
+  - { name: nexus-pdf-worker, newName: nexus-pdf-worker, newTag: dev-f0927bc
 
 patches:
   # ست کردن استراتژی Recreate و imagePullPolicy روی IfNotPresent
