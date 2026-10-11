@@ -1,7 +1,7 @@
 # ADR-020: Use Argo CD for declarative GitOps continuous delivery
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

@@ -1,7 +1,7 @@
 # ADR-024: Use the transactional outbox pattern for atomic message publishing
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

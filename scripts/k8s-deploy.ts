@@ -77,15 +77,8 @@ function main(): void {
   console.log("⚡ [1/3] Building ALL Docker Images in Parallel using npx turbo...");
   runCommand("npx turbo run docker:build --concurrency=100%", mergedEnv);
 
-  // ۲. اعمال Applicationهای ArgoCD مربوط به مانیتورینگ
-  console.log("📈 [2/3] Applying ArgoCD Applications for Monitoring Stack...");
-  runCommand("kubectl apply -n argocd -f platform/argocd/apps/", mergedEnv);
-
-  console.log("🔎 Checking required CRDs / operators...");
-  waitForCrds();
-
-  // ۳. اعمال مانیفست‌های اصلی پروژه روی کوبرنتیز
-  console.log("🚀 [3/3] Applying Manifests to Kubernetes Cluster...");
+  // ۲. اعمال مانیفست‌های اصلی پروژه روی کوبرنتیز (ترتیب جابجا شد تا CRDها ابتدا مستقر شوند)
+  console.log("🚀 [2/3] Applying Main Manifests to Kubernetes Cluster...");
   const rawManifests = execSync("kubectl kustomize k8s/overlays/dev", {
     encoding: "utf8",
     env: mergedEnv,
@@ -100,6 +93,13 @@ function main(): void {
     input: processedManifests,
     stdio: ["pipe", "inherit", "inherit"],
   });
+
+  console.log("🔎 Checking required CRDs / operators...");
+  waitForCrds();
+
+  // ۳. اعمال Applicationهای ArgoCD مربوط به مانیتورینگ و کل سرویس‌ها (بعد از اطمینان از وجود CRDها)
+  console.log("📈 [3/3] Applying ArgoCD Applications for Monitoring & Apps Stack...");
+  runCommand("kubectl apply -n argocd -f platform/argocd/apps/", mergedEnv);
 
   console.log("✅ Enterprise Deployment Pipeline Executed Successfully!");
 }

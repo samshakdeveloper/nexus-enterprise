@@ -1,7 +1,7 @@
 # ADR-022: Use Husky and Commitlint for Git lifecycle governance
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

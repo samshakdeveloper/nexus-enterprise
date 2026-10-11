@@ -1,7 +1,7 @@
 # ADR-023: Use eslint-plugin-boundaries to enforce hexagonal layers
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 
@@ -17,11 +17,11 @@ We encode the dependency rules as lint errors with
 - Each workspace is an element: `domain`, `application`, `infrastructure`,
   `shared`, and `app`.
 - Allowed dependencies (everything else is disallowed by default):
-    - `domain` → `shared`
-    - `application` → `domain`, `shared`
-    - `infrastructure` → `application`, `domain`, `shared`
-    - `shared` → nothing
-    - `app` → `infrastructure`, `application`, `domain`, `shared`
+  - `domain` → `shared`
+  - `application` → `domain`, `shared`
+  - `infrastructure` → `application`, `domain`, `shared`
+  - `shared` → nothing
+  - `app` → `infrastructure`, `application`, `domain`, `shared`
 - The rule runs together with type-aware TypeScript linting in the
   pre-commit hook and in CI, so violations block merges.
 

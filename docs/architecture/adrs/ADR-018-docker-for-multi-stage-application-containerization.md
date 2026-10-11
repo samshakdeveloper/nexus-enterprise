@@ -1,7 +1,7 @@
 # ADR-018: Use Docker multi-stage builds for application containerization
 
 - **Status:** Accepted
-- **Date:** 2026-10-08 
+- **Date:** 2026-10-08
 
 ## Context
 

@@ -17,3 +17,5 @@ resources:
 # ConfigMap با نام global-env-config (فقط مقادیر غیرمحرمانه) و Secretهای
 # nexus-pg-app-credentials / nexus-s3 / nexus-app (JWT_SECRET) در overlay ساخته می‌شوند
 # (dev: secretGenerator، prod: ExternalSecret)
+
+
