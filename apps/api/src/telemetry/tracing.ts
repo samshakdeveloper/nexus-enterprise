@@ -17,7 +17,7 @@ const serviceName = process.env["OTEL_SERVICE_NAME"] ?? "nexus-api";
 const sdk = new NodeSDK({
   resource: resourceFromAttributes({
     [ATTR_SERVICE_NAME]: serviceName,
-    [ATTR_SERVICE_VERSION]: "1.0.0",
+    [ATTR_SERVICE_VERSION]: process.env["npm_package_version"] ?? "0.0.0",
   }),
   traceExporter: new OTLPTraceExporter({ url: `${otlpEndpoint}/v1/traces` }),
   metricReader: new PeriodicExportingMetricReader({
