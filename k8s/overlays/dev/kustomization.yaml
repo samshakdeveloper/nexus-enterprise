@@ -33,20 +33,20 @@ secretGenerator:
 
 images:
   - name: nexus-api
-    newName: nexus-api
-    newTag: latest
+    newName: ghcr.io/samshakdeveloper/nexus-api
+    newTag: dev-4dbc75b
   - name: nexus-web
-    newName: nexus-web
-    newTag: latest
+    newName: ghcr.io/samshakdeveloper/nexus-web
+    newTag: dev-4dbc75b
   - name: nexus-email-worker
-    newName: nexus-email-worker
-    newTag: latest
+    newName: ghcr.io/samshakdeveloper/nexus-email-worker
+    newTag: dev-4dbc75b
   - name: nexus-event-worker
-    newName: nexus-event-worker
-    newTag: latest
+    newName: ghcr.io/samshakdeveloper/nexus-event-worker
+    newTag: dev-4dbc75b
   - name: nexus-pdf-worker
-    newName: nexus-pdf-worker
-    newTag: latest
+    newName: ghcr.io/samshakdeveloper/nexus-pdf-worker
+    newTag: dev-4dbc75b
 
 patches:
   # ست کردن استراتژی Recreate و imagePullPolicy روی IfNotPresent
