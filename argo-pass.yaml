@@ -1,9 +1,0 @@
-﻿apiVersion: v1
-kind: Secret
-metadata:
-  name: argocd-secret
-  namespace: argocd
-type: Opaque
-stringData:
-  admin.password: "$2a$10$w09Z.fC8B3GgZ3lD6L2G/O1wWzJmZ2kR86k8fA69tG280V8D1/Yt9"
-  admin.passwordMtime: "2026-01-01T00:00:00Z"

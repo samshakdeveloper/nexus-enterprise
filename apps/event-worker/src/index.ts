@@ -1,5 +1,5 @@
 // apps/event-worker/src/index.ts
-import { KafkaPublisherAdapter } from "@nexus/infrastructure";
+import { KafkaPublisherAdapter, PostgresInstanceAdapter } from "@nexus/infrastructure";
 
 import { OutboxRepositoryAdapter } from "./adapters/outbox-repository.adapter.js";
 import { loadEnv } from "./config/env.js";
@@ -13,7 +13,8 @@ async function bootstrap() {
   const kafkaPublisher = new KafkaPublisherAdapter(env.KAFKA_BROKER);
   await kafkaPublisher.connect();
 
-  const outboxRepo = new OutboxRepositoryAdapter(); // یا پاس دادن Connection دیتابیس
+  const db = PostgresInstanceAdapter.createInstance(env.DATABASE_URL);
+  const outboxRepo = new OutboxRepositoryAdapter(db);
 
   // ۲. تزریق dependencyها به پردازشگر (Processor / Application Layer)
   const outboxProcessor = new OutboxProcessor(outboxRepo, kafkaPublisher);

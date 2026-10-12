@@ -1,6 +1,6 @@
 import type { LoggerPort } from "@nexus/shared";
 import { trace } from "@opentelemetry/api";
-import type { Kysely } from "kysely";
+import { sql, type Kysely } from "kysely";
 
 import type { PostgresTablesContract } from "../../persistence/postgres/postgres-tables.contract.js";
 
@@ -32,13 +32,22 @@ export class OutboxProcessor {
   }
 
   public async processBatch(batchSize = 50): Promise<number> {
-    const rows = await this.db
-      .selectFrom("outbox")
-      .selectAll()
-      .where("processed_at", "is", null)
-      .orderBy("occurred_at", "asc")
-      .limit(batchSize)
-      .execute();
+    const rows = await sql<{
+      id: string;
+      aggregate_id: string;
+      event_name: string;
+      payload: unknown;
+      occurred_at: Date;
+      processed_at: Date | null;
+    }>`
+      SELECT * FROM outbox
+      WHERE processed_at IS NULL
+      ORDER BY occurred_at ASC
+      LIMIT ${batchSize}
+      FOR UPDATE SKIP LOCKED
+    `
+      .execute(this.db)
+      .then((r) => r.rows);
 
     for (const row of rows) {
       await this.tracer.startActiveSpan(`outbox.process ${row.event_name}`, async (span) => {

@@ -15,7 +15,6 @@ export class OutboxProcessor {
     for (const message of pendingMessages) {
       try {
         const topic = DomainEventTopics.USER_EVENTS;
-        console.error("DEBUG createdAt:", typeof message.occurred_at, message.occurred_at);
 
         // ۲. ساخت پیام طبق Contract استاندارد دامین
         const eventEnvelope: DomainEventEnvelope = {

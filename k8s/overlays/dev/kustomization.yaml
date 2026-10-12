@@ -31,13 +31,22 @@ secretGenerator:
     literals: [JWT_SECRET=dev-only-change-me-jwt-secret-0123456789]
     options: { disableNameSuffixHash: true }
 
-# 👈 تنظیم دقیق نام ایمیج‌های لوکال برای Docker Desktop
 images:
-  - { name: nexus-api, newName: nexus-api, newTag: dev-885f2fa
-  - { name: nexus-web, newName: nexus-web, newTag: dev-885f2fa
-  - { name: nexus-email-worker, newName: nexus-email-worker, newTag: dev-885f2fa
-  - { name: nexus-event-worker, newName: nexus-event-worker, newTag: dev-885f2fa
-  - { name: nexus-pdf-worker, newName: nexus-pdf-worker, newTag: dev-885f2fa
+  - name: nexus-api
+    newName: nexus-api
+    newTag: latest
+  - name: nexus-web
+    newName: nexus-web
+    newTag: latest
+  - name: nexus-email-worker
+    newName: nexus-email-worker
+    newTag: latest
+  - name: nexus-event-worker
+    newName: nexus-event-worker
+    newTag: latest
+  - name: nexus-pdf-worker
+    newName: nexus-pdf-worker
+    newTag: latest
 
 patches:
   # ست کردن استراتژی Recreate و imagePullPolicy روی IfNotPresent
@@ -92,7 +101,7 @@ patches:
           default.replication.factor: 1
           min.insync.replicas: 1
           auto.create.topics.enable: true
-  # 👈 پچ سبک‌سازی منابع برای پادها (مخصوص تست لوکال و CPU ضعیف)
+  # پچ سبک‌سازی منابع برای پادها (مخصوص تست لوکال و CPU ضعیف)
   - target: { kind: Deployment, name: "(api|email-worker|event-worker|pdf-worker|web)" }
     patch: |-
       - op: replace

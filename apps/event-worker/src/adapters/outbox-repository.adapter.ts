@@ -1,16 +1,9 @@
 import { OutboxRepositoryPort, OutboxMessage } from "@nexus/application";
-import { PostgresInstanceAdapter } from "@nexus/infrastructure";
+import type { PostgresTablesContract } from "@nexus/infrastructure";
 import { Kysely, sql } from "kysely";
 
-import { loadEnv } from "../config/env.js";
-
 export class OutboxRepositoryAdapter implements OutboxRepositoryPort {
-  private readonly db: Kysely<unknown>;
-
-  constructor() {
-    const env = loadEnv();
-    this.db = PostgresInstanceAdapter.createInstance(env.DATABASE_URL) as Kysely<unknown>;
-  }
+  constructor(private readonly db: Kysely<PostgresTablesContract>) {}
 
   async fetchPendingMessages(batchSize: number): Promise<OutboxMessage[]> {
     const query = sql<OutboxMessage>`
@@ -18,7 +11,7 @@ export class OutboxRepositoryAdapter implements OutboxRepositoryPort {
              aggregate_id AS "aggregateId",
              event_name AS "type",
              payload,
-             trace_id AS "traceId" 
+             trace_id AS "traceId"
       FROM outbox
       WHERE processed_at IS NULL
       LIMIT ${batchSize}
@@ -38,7 +31,9 @@ export class OutboxRepositoryAdapter implements OutboxRepositoryPort {
     await query.execute(this.db);
   }
 
-  async save(_message: OutboxMessage): Promise<void> {
-    // پیاده‌سازی متد save در صورت نیاز
+  save(_message: OutboxMessage): Promise<void> {
+    throw new Error(
+      "OutboxRepositoryAdapter.save() is not implemented — outbox rows are written by the API within its transaction.",
+    );
   }
 }
