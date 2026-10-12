@@ -21,8 +21,8 @@ export class OutboxProcessor {
   private readonly tracer = trace.getTracer("nexus.outbox-processor");
 
   constructor(
-      private readonly db: Kysely<PostgresTablesContract>,
-      private readonly logger: LoggerPort,
+    private readonly db: Kysely<PostgresTablesContract>,
+    private readonly logger: LoggerPort,
   ) {}
 
   public register(handler: OutboxHandler): void {
@@ -45,15 +45,17 @@ export class OutboxProcessor {
       ORDER BY occurred_at ASC
       LIMIT ${batchSize}
       FOR UPDATE SKIP LOCKED
-    `.execute(this.db).then((r) => r.rows);
+    `
+      .execute(this.db)
+      .then((r) => r.rows);
 
     for (const row of rows) {
       await this.tracer.startActiveSpan(`outbox.process ${row.event_name}`, async (span) => {
         try {
           const handlers = this.handlers.get(row.event_name) ?? [];
           const payload = (typeof row.payload === "string" ? JSON.parse(row.payload) : row.payload) as Record<
-              string,
-              unknown
+            string,
+            unknown
           >;
           await Promise.all(handlers.map((h) => h.handle(payload)));
           await this.db.updateTable("outbox").set({ processed_at: new Date() }).where("id", "=", row.id).execute();

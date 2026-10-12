@@ -31,7 +31,9 @@ export class OutboxRepositoryAdapter implements OutboxRepositoryPort {
     await query.execute(this.db);
   }
 
-   save(_message: OutboxMessage): Promise<void> {
-    throw new Error("OutboxRepositoryAdapter.save() is not implemented — outbox rows are written by the API within its transaction.");
+  save(_message: OutboxMessage): Promise<void> {
+    throw new Error(
+      "OutboxRepositoryAdapter.save() is not implemented — outbox rows are written by the API within its transaction.",
+    );
   }
 }

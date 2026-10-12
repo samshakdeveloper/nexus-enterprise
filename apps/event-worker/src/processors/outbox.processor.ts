@@ -4,8 +4,8 @@ import { DomainEventTopics, DomainEventEnvelope } from "@nexus/domain";
 
 export class OutboxProcessor {
   constructor(
-      private readonly outboxRepo: OutboxRepositoryPort,
-      private readonly messageBrokerPublisher: MessageBrokerPublisherPort,
+    private readonly outboxRepo: OutboxRepositoryPort,
+    private readonly messageBrokerPublisher: MessageBrokerPublisherPort,
   ) {}
 
   // اجرا با CronJob یا Interval

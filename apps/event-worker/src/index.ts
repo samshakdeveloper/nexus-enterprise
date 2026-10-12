@@ -33,12 +33,12 @@ async function bootstrap() {
     console.info("Shutting down Event Worker...");
     clearInterval(intervalId);
     kafkaPublisher
-        .disconnect()
-        .then(() => process.exit(0))
-        .catch((error: unknown) => {
-          console.error("Error during disconnect:", error);
-          process.exit(1);
-        });
+      .disconnect()
+      .then(() => process.exit(0))
+      .catch((error: unknown) => {
+        console.error("Error during disconnect:", error);
+        process.exit(1);
+      });
   };
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
