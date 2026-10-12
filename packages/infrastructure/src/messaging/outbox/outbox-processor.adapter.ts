@@ -1,6 +1,6 @@
 import type { LoggerPort } from "@nexus/shared";
 import { trace } from "@opentelemetry/api";
-import type { Kysely } from "kysely";
+import { sql, type Kysely } from "kysely";
 
 import type { PostgresTablesContract } from "../../persistence/postgres/postgres-tables.contract.js";
 
@@ -21,8 +21,8 @@ export class OutboxProcessor {
   private readonly tracer = trace.getTracer("nexus.outbox-processor");
 
   constructor(
-    private readonly db: Kysely<PostgresTablesContract>,
-    private readonly logger: LoggerPort,
+      private readonly db: Kysely<PostgresTablesContract>,
+      private readonly logger: LoggerPort,
   ) {}
 
   public register(handler: OutboxHandler): void {
@@ -32,21 +32,28 @@ export class OutboxProcessor {
   }
 
   public async processBatch(batchSize = 50): Promise<number> {
-    const rows = await this.db
-      .selectFrom("outbox")
-      .selectAll()
-      .where("processed_at", "is", null)
-      .orderBy("occurred_at", "asc")
-      .limit(batchSize)
-      .execute();
+    const rows = await sql<{
+      id: string;
+      aggregate_id: string;
+      event_name: string;
+      payload: unknown;
+      occurred_at: Date;
+      processed_at: Date | null;
+    }>`
+      SELECT * FROM outbox
+      WHERE processed_at IS NULL
+      ORDER BY occurred_at ASC
+      LIMIT ${batchSize}
+      FOR UPDATE SKIP LOCKED
+    `.execute(this.db).then((r) => r.rows);
 
     for (const row of rows) {
       await this.tracer.startActiveSpan(`outbox.process ${row.event_name}`, async (span) => {
         try {
           const handlers = this.handlers.get(row.event_name) ?? [];
           const payload = (typeof row.payload === "string" ? JSON.parse(row.payload) : row.payload) as Record<
-            string,
-            unknown
+              string,
+              unknown
           >;
           await Promise.all(handlers.map((h) => h.handle(payload)));
           await this.db.updateTable("outbox").set({ processed_at: new Date() }).where("id", "=", row.id).execute();
