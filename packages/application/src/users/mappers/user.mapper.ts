@@ -4,7 +4,7 @@ import type { CreateUserResponseContract } from "../contracts/create-user-respon
 
 /** Anti-corruption boundary: the domain model never leaks past this point. */
 export class UserMapper {
-  public static toResponseDto(user: User): CreateUserResponseContract {
+  public static toCrateUserResponseDto(user: User): CreateUserResponseContract {
     const primitives = user.toPrimitives();
     return {
       message: "Verification code sent to email.",

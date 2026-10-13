@@ -83,6 +83,6 @@ export class CreateUserHandler implements CommandHandler<CreateUserCommand, Crea
 
     log.info("User created successfully", { userId: userAggregate.id.value });
 
-    return UserMapper.toResponseDto(userAggregate);
+    return UserMapper.toCrateUserResponseDto(userAggregate);
   }
 }
