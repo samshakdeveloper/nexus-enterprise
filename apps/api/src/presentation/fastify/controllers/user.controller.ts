@@ -1,8 +1,14 @@
-import type { CommandBus, CreateUserResponseContract } from "@nexus/application";
-import { CreateUserCommand } from "@nexus/application";
+import {
+  CommandBus,
+  CreateUserResponseContract,
+  VerifyEmailCommand,
+  VerifyEmailResponseContract,
+  CreateUserCommand,
+} from "@nexus/application";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
 import { CreateUserRequestValidator } from "../../shared/validators/user/create-user-request.validator.js";
+import { VerifyEmailRequestValidator } from "../../shared/validators/user/verify-email-request.validator.js";
 
 export class UserController {
   constructor(private readonly commandBus: CommandBus) {}
@@ -19,7 +25,20 @@ export class UserController {
       request.correlationId,
     );
     const result = await this.commandBus.execute<CreateUserCommand, CreateUserResponseContract>(command);
-    reply.status(201);
-    return result;
+    return reply.status(201).send(result);
+  };
+
+  public verifyEmail = async (
+    request: FastifyRequest<{ Body: unknown }>,
+    reply: FastifyReply,
+  ): Promise<VerifyEmailResponseContract> => {
+    const verifyEmailRequestContract = VerifyEmailRequestValidator.parse(request.body);
+    const command = new VerifyEmailCommand(
+      verifyEmailRequestContract.code,
+      verifyEmailRequestContract.email,
+      request.correlationId,
+    );
+    const result = await this.commandBus.execute<VerifyEmailCommand, VerifyEmailResponseContract>(command);
+    return reply.status(200).send(result);
   };
 }

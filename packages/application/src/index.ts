@@ -12,11 +12,16 @@ export * from "./users/ports/unit-of-work.port.js";
 export * from "./users/ports/password-policy.port.js";
 
 export * from "./users/contracts/create-user-response.contract.js";
+export * from "./users/contracts/verify-email-response.contract.js";
 export * from "./users/mappers/user.mapper.js";
 
 export * from "./users/commands/create-user/create-user.command.js";
 export * from "./users/commands/create-user/create-user.handler.js";
 export * from "./users/commands/create-user/create-user.errors.js";
+
+export * from "./users/commands/verify-email/verify-email.command.js";
+export * from "./users/commands/verify-email/verify-email.errors.js";
+
 export * from "./users/services/default-password-policy.service.js";
 export * from "./ports/event-worker/outbox-repository.port.js";
 export * from "./ports/encryption.port.js";

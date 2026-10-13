@@ -2,6 +2,7 @@ import type { IdGeneratorPort } from "@nexus/shared";
 
 import { AggregateRoot } from "../shared/aggregate-root.js";
 import { UserCreatedEvent } from "./events/user-created.event.js";
+import { UserVerifiedEvent } from "./events/user-verified.event.js";
 import { Email } from "./value-objects/email.vo.js";
 import { FullName } from "./value-objects/full-name.vo.js";
 import { HashedPassword } from "./value-objects/hashed-password.vo.js";
@@ -37,7 +38,11 @@ export class User extends AggregateRoot<UserId> {
       verificationCode: VerificationCode;
       createdAt: Date;
     },
-    deps: { idGenerator: IdGeneratorPort; clock: { now: () => Date }; traceId?: string | undefined },
+    deps: {
+      idGenerator: IdGeneratorPort;
+      clock: { now: () => Date };
+      traceId?: string | undefined;
+    },
   ): User {
     //3
     const user = new User(params.id, {
@@ -68,6 +73,43 @@ export class User extends AggregateRoot<UserId> {
     );
 
     return user;
+  }
+
+  public isAlreadyVerified(): boolean {
+    return this.props.status === "ACTIVE";
+  }
+
+  public isVerificationCodeExpired(now: Date): boolean {
+    if (!this.props.verificationCodeExpiresAt) {
+      return true; // اگر تاریخی وجود نداشت یعنی منقضی فرض می‌شود
+    }
+    return now > this.props.verificationCodeExpiresAt;
+  }
+
+  public verify(deps: {
+    idGenerator: IdGeneratorPort;
+    clock: { now: () => Date };
+    traceId?: string | undefined;
+    verifiedAt: Date;
+  }): void {
+    this.props.status = "ACTIVE";
+    this.props.verificationCode = undefined;
+    this.props.verificationCodeExpiresAt = undefined;
+
+    // Record domain event in-memory to be persisted into the Outbox table via Unit of Work
+    this.addDomainEvent(
+      new UserVerifiedEvent(
+        this.id.value,
+        {
+          userId: this.id.value,
+          email: this.email.value,
+          verifiedAt: deps.verifiedAt.toISOString(),
+        },
+        deps.idGenerator,
+        deps.clock,
+        deps.traceId,
+      ),
+    );
   }
 
   /** Rehydration from persistence — no events raised, no re-validation of business rules. */

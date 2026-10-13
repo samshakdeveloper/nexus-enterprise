@@ -105,7 +105,9 @@ describe("POST /api/v1/users (e2e)", () => {
     // نمونه‌ی واقعی Fastify را مستقیم از getter صریح آداپتر می‌گیریم (بدون حدس زدن نام پراپرتی).
     // اگر getter وجود نداشته باشد، TypeScript و تست همین‌جا خطا می‌دهند، نه ۵ خطای گیج‌کننده بعدتر.
     app = fastifyAdapter.instance;
+    console.log("before ready");
     await app.ready();
+    console.log("after ready");
   });
 
   afterAll(async () => {
