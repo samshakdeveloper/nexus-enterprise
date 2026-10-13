@@ -2,13 +2,15 @@ import {
   CommandBus,
   CreateUserResponseContract,
   VerifyEmailCommand,
-  VerifyEmailResponseContract,
-  CreateUserCommand,
+  VerifyEmailResponseContract,LoginCommand,
+  CreateUserCommand,LoginResponseContract
 } from "@nexus/application";
 import type { FastifyRequest, FastifyReply } from "fastify";
 
 import { CreateUserRequestValidator } from "../../shared/validators/user/create-user-request.validator.js";
+import { LoginRequestValidator } from "../../shared/validators/user/login-request.validator.js";
 import { VerifyEmailRequestValidator } from "../../shared/validators/user/verify-email-request.validator.js";
+
 
 export class UserController {
   constructor(private readonly commandBus: CommandBus) {}
@@ -39,6 +41,26 @@ export class UserController {
       request.correlationId,
     );
     const result = await this.commandBus.execute<VerifyEmailCommand, VerifyEmailResponseContract>(command);
+    return reply.status(200).send(result);
+  };
+
+
+  public login = async (
+      request: FastifyRequest<{ Body: unknown }>,
+      reply: FastifyReply,
+  ): Promise<LoginResponseContract> => {
+    const loginRequestContract = LoginRequestValidator.parse(request.body);
+    // ۲. استخراج نوع کلاینت از هدر تایید شده گیت‌وی (با فالبک به وب برای امنیت بیشتر)
+    const clientTypeHeader = request.headers["x-internal-client-type"];
+    const clientType = clientTypeHeader === "mobile" ? "mobile" : "web";
+
+    const command = new LoginCommand(
+        loginRequestContract.email,
+        loginRequestContract.password,
+        clientType,
+        request.correlationId,
+    );
+    const result = await this.commandBus.execute<LoginCommand, LoginResponseContract>(command);
     return reply.status(200).send(result);
   };
 }
